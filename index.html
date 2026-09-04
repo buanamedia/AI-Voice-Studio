@@ -1,1089 +1,1127 @@
 <!DOCTYPE html>
 <html lang="id" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Voice Studio - Generator Text to Speech</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            darkbg: '#0a0a0a',
-            bordercolor: 'rgba(125, 125, 125, 0.2)',
-            brandblue: '#38bdf8',
-            brandpurple: '#8b5cf6',
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Studio - By Buana Media</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#080d1a',
+                        cardbg: '#0f172a',
+                        bordercolor: '#1e293b',
+                        accent: '#3b82f6',
+                        accenthover: '#2563eb',
+                        brandblue: '#60a5fa',
+                    }
+                }
+            }
         }
-      }
-    }
-  </script>
+    </script>
 
-  <!-- React & Babel CDN -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- LAME MP3 Encoder Library CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
 
-  <!-- FontAwesome & Fonts -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- LAME MP3 Encoder Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
-
-  <style>
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #0a0a0a;
-      color: #e5e7eb;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(100, 116, 139, 0.5);
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(148, 163, 184, 0.8);
-    }
-  </style>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080d1a;
+            color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #080d1a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased text-gray-200 bg-darkbg">
+<body class="min-h-screen flex flex-col antialiased bg-darkbg text-slate-100">
 
-  <div id="root"></div>
+    <!-- Header Navigation -->
+    <header class="border-b border-bordercolor bg-cardbg/80 backdrop-blur px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center space-x-3">
+            <div class="bg-accent/10 border border-accent/30 p-2.5 rounded-xl text-accent flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-wide text-white flex items-center gap-2 leading-tight">
+                    AI Voice Studio
+                </h1>
+                <div class="flex items-center space-x-2 text-[11px] leading-snug">
+                    <a href="https://www.buanamedia.my.id" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-brandblue font-semibold hover:underline flex items-center gap-1">
+                        <span>By Buana Media</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                    <span class="text-gray-600">•</span>
+                    <span class="text-gray-400">Text-to-Speech Multi-Engine AI</span>
+                </div>
+            </div>
+        </div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+        <div class="flex items-center space-x-3">
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Gemini 2.5 TTS Ready
+            </span>
 
-    const GEMINI_VOICES = [
-      { id: "Zephyr", name: "Zephyr", gender: "female", style: "Bright & Energetik", description: "Cerah, ramah, dan artikulatif", tag: "Populer" },
-      { id: "Kore", name: "Kore", gender: "female", style: "Firm & Berwibawa", description: "Tegas, profesional, dan meyakinkan", tag: "Bisnis" },
-      { id: "Leda", name: "Leda", gender: "female", style: "Youthful & Lembut", description: "Muda, bersih, dan lembut", tag: "Lembut" },
-      { id: "Aoede", name: "Aoede", gender: "female", style: "Breezy & Santai", description: "Santai, natural, dan menyenangkan", tag: "Casual" },
-      { id: "Callirrhoe", name: "Callirrhoe", gender: "female", style: "Easy-going", description: "Tenang dan halus", tag: "Santai" },
-      { id: "Puck", name: "Puck", gender: "male", style: "Upbeat & Ceria", description: "Penuh semangat dan ekspresif", tag: "Ceria" },
-      { id: "Charon", name: "Charon", gender: "male", style: "Informative & Dalam", description: "Formal, jelas, cocok untuk narasi", tag: "Formal" },
-      { id: "Fenrir", name: "Fenrir", gender: "male", style: "Excitable & Antusias", description: "Dinamis dan penuh energi", tag: "Antusias" },
-      { id: "Enceladus", name: "Enceladus", gender: "male", style: "Breathy & Berbisik", description: "Suara hangat dan lembut", tag: "ASMR" },
-      { id: "Iapetus", name: "Iapetus", gender: "male", style: "Clear & Netral", description: "Suara jernih dan berwibawa", tag: "Berita" }
-    ];
+            <button id="btn-api-settings" onclick="openApiModal()" class="text-xs bg-cardbg hover:bg-bordercolor text-gray-200 border border-bordercolor px-3.5 py-2 rounded-xl transition font-semibold flex items-center gap-2 shadow-sm cursor-pointer">
+                <i class="fa-solid fa-key text-accent"></i>
+                <span id="api-key-badge-text">API Keys</span>
+            </button>
+        </div>
+    </header>
 
-    function App() {
-      // API Keys Multi State
-      const [apiKeys, setApiKeys] = useState([]);
-      const [newKeyInput, setNewKeyInput] = useState('');
-      const [showInputKeyText, setShowInputKeyText] = useState(false);
-      const [visibleKeysMap, setVisibleKeysMap] = useState({});
-      const [copiedKeyIndex, setCopiedKeyIndex] = useState(null);
-      const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Controls & Voice Selection (5 Cols) -->
+        <section class="lg:col-span-5 flex flex-col space-y-5">
+            
+            <!-- Engine & Provider Selection Card -->
+            <div class="bg-cardbg border border-bordercolor rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-accent"></i> Pilih Engine Suara
+                    </h2>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold">Free Tier</span>
+                </div>
 
-      // Engine & Input Settings
-      const [currentEngine, setCurrentEngine] = useState('gemini'); // 'gemini', 'webspeech'
-      const [inputMode, setInputMode] = useState('single'); // 'single', 'dialogue'
-      const [selectedVoice, setSelectedVoice] = useState('Zephyr');
-      const [searchQuery, setSearchQuery] = useState('');
-      const [genderFilter, setGenderFilter] = useState('all');
-      
-      const [textInput, setTextInput] = useState('');
-      const [dialogueInput, setDialogueInput] = useState('');
-      const [speaker1Voice, setSpeaker1Voice] = useState('Zephyr');
-      const [speaker2Voice, setSpeaker2Voice] = useState('Puck');
-      
-      const [emotionPrefix, setEmotionPrefix] = useState('');
-      const [speechRate, setSpeechRate] = useState(1.0);
-      const [speechPitch, setSpeechPitch] = useState(1.0);
+                <!-- Engine Selectors -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button onclick="switchEngine('gemini')" id="engine-btn-gemini" class="engine-btn p-3 rounded-xl border border-accent bg-accent/10 text-white font-medium flex flex-col items-start gap-1 transition-all shadow-md cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-bold text-xs"><i class="fa-brands fa-google text-accent mr-1"></i> Gemini AI</span>
+                            <span class="text-[9px] bg-accent text-white font-extrabold px-1.5 py-0.5 rounded">Rekomendasi</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400">30+ Suara AI Realistis</span>
+                    </button>
 
-      // Audio & Visualizer State
-      const [isLoading, setIsLoading] = useState(false);
-      const [error, setError] = useState(null);
-      const [isPlaying, setIsPlaying] = useState(false);
-      const [currentTrackTitle, setCurrentTrackTitle] = useState('Belum ada audio');
-      const [currentTrackVoice, setCurrentTrackVoice] = useState('Voice: -');
-      const [timeDisplay, setTimeDisplay] = useState('00:00 / 00:00');
-      
-      const [mp3Blob, setMp3Blob] = useState(null);
-      const [wavBlob, setWavBlob] = useState(null);
-      const [history, setHistory] = useState([]);
-      const [toast, setToast] = useState(null);
+                    <button onclick="switchEngine('webspeech')" id="engine-btn-webspeech" class="engine-btn p-3 rounded-xl border border-bordercolor bg-darkbg text-gray-400 font-medium flex flex-col items-start gap-1 transition-all hover:text-white cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-bold text-xs"><i class="fa-solid fa-desktop text-purple-400 mr-1"></i> Web Speech</span>
+                            <span class="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Offline</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400">Bawaan Browser</span>
+                    </button>
 
-      const audioRef = useRef(null);
-      const canvasRef = useRef(null);
-      const animFrameRef = useRef(null);
+                    <button onclick="switchEngine('openai')" id="engine-btn-openai" class="engine-btn p-3 rounded-xl border border-bordercolor bg-darkbg text-gray-400 font-medium flex flex-col items-start gap-1 transition-all hover:text-white cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-bold text-xs"><i class="fa-solid fa-robot text-emerald-400 mr-1"></i> OpenAI TTS</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400">Alloy, Echo, Fable...</span>
+                    </button>
 
-      // Initial Storage Load
-      useEffect(() => {
-        const savedKeys = localStorage.getItem('pv_tts_api_keys');
-        if (savedKeys) {
-          try {
-            const parsed = JSON.parse(savedKeys);
-            if (Array.isArray(parsed) && parsed.length > 0) setApiKeys(parsed);
-            else setShowApiKeyModal(true);
-          } catch(e) { setShowApiKeyModal(true); }
-        } else {
-          const legacyKey = localStorage.getItem('gemini_api_key');
-          if (legacyKey) {
-            setApiKeys([legacyKey]);
-            localStorage.setItem('pv_tts_api_keys', JSON.stringify([legacyKey]));
-          } else {
-            setShowApiKeyModal(true);
-          }
-        }
+                    <button onclick="switchEngine('elevenlabs')" id="engine-btn-elevenlabs" class="engine-btn p-3 rounded-xl border border-bordercolor bg-darkbg text-gray-400 font-medium flex flex-col items-start gap-1 transition-all hover:text-white cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-bold text-xs"><i class="fa-solid fa-microphone-lines text-pink-400 mr-1"></i> ElevenLabs</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400">Sintesis AI Lanjutan</span>
+                    </button>
+                </div>
+            </div>
 
-        const savedHistory = localStorage.getItem('pv_tts_history');
-        if (savedHistory) {
-          try { setHistory(JSON.parse(savedHistory)); } catch(e){}
-        }
-      }, []);
+            <!-- Voice List Card -->
+            <div class="bg-cardbg border border-bordercolor rounded-2xl p-5 space-y-4 flex-1 flex flex-col">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-accent"></i> Karakter Suara
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="testSelectedVoice()" class="px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/30 text-accent hover:bg-accent hover:text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer" title="Tes Suara Pilihan">
+                            <i class="fa-solid fa-volume-high text-xs"></i>
+                            <span>Tes Suara</span>
+                        </button>
+                        <span id="voice-count-badge" class="text-xs text-gray-400">30 Pilihan Suara</span>
+                    </div>
+                </div>
 
-      // Audio Event Listeners
-      useEffect(() => {
-        const player = audioRef.current;
-        if (!player) return;
+                <!-- Voice Filter / Search -->
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input type="text" id="voice-search" oninput="filterVoices()" placeholder="Cari nama suara..." class="w-full bg-darkbg border border-bordercolor rounded-xl pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:border-accent">
+                    </div>
+                    <select id="voice-gender-filter" onchange="filterVoices()" class="bg-darkbg border border-bordercolor rounded-xl px-2.5 py-2 text-xs text-gray-300 focus:outline-none focus:border-accent cursor-pointer">
+                        <option value="all">Semua Suara</option>
+                        <option value="female">👩 Perempuan</option>
+                        <option value="male">👨 Laki-Laki</option>
+                    </select>
+                </div>
 
-        const handleTimeUpdate = () => {
-          const cur = formatTime(player.currentTime);
-          const dur = formatTime(player.duration || 0);
-          setTimeDisplay(`${cur} / ${dur}`);
+                <!-- Voice Selection List -->
+                <div id="voice-list-container" class="space-y-2 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar flex-1">
+                    <!-- Populated dynamically via JavaScript -->
+                </div>
+
+                <!-- Emotion Customizer -->
+                <div id="gemini-emotion-section" class="pt-3 border-t border-bordercolor space-y-2">
+                    <label class="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                        <span><i class="fa-solid fa-masks-theater text-amber-400 mr-1"></i> Ekspresi & Gaya Ucapan</span>
+                        <span class="text-[10px] text-gray-500">Opsional</span>
+                    </label>
+                    <div class="grid grid-cols-3 gap-1.5 text-[11px]">
+                        <button onclick="setEmotion('Bicara dengan ceria dan ramah: ')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-300 hover:border-accent transition text-left truncate cursor-pointer">😊 Ceria</button>
+                        <button onclick="setEmotion('Bicara dengan nada berbisik misterius: ')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-300 hover:border-accent transition text-left truncate cursor-pointer">🤫 Berbisik</button>
+                        <button onclick="setEmotion('Bicara dengan tegas seperti pembawa berita formal: ')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-300 hover:border-accent transition text-left truncate cursor-pointer">🎙️ Berita</button>
+                        <button onclick="setEmotion('Bicara dengan nada santai dan bersahabat: ')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-300 hover:border-accent transition text-left truncate cursor-pointer">☕ Santai</button>
+                        <button onclick="setEmotion('Bicara dengan antusiasme tinggi dan semangat: ')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-300 hover:border-accent transition text-left truncate cursor-pointer">🔥 Antusias</button>
+                        <button onclick="setEmotion('')" class="emotion-chip p-2 rounded-lg bg-darkbg border border-bordercolor text-gray-400 hover:border-red-500 transition text-center truncate cursor-pointer">❌ Hapus</button>
+                    </div>
+                </div>
+
+                <!-- Speed & Pitch Sliders -->
+                <div class="pt-2 border-t border-bordercolor grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <div class="flex justify-between text-gray-400 mb-1">
+                            <span>Speed</span>
+                            <span id="speed-val">1.0x</span>
+                        </div>
+                        <input type="range" id="speech-rate" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('speed-val').innerText = this.value + 'x'" class="w-full accent-accent h-1 bg-darkbg rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-gray-400 mb-1">
+                            <span>Pitch</span>
+                            <span id="pitch-val">1.0</span>
+                        </div>
+                        <input type="range" id="speech-pitch" min="0.5" max="1.5" step="0.1" value="1" oninput="document.getElementById('pitch-val').innerText = this.value" class="w-full accent-accent h-1 bg-darkbg rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Right Column: Text Input & Audio Player (7 Cols) -->
+        <section class="lg:col-span-7 flex flex-col space-y-5">
+            
+            <!-- Text Input Card -->
+            <div class="bg-cardbg border border-bordercolor rounded-2xl p-5 space-y-4 flex-1 flex flex-col">
+                
+                <!-- Input Mode Tabs -->
+                <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                    <div class="flex items-center space-x-2">
+                        <button id="mode-tab-single" onclick="switchMode('single')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-accent text-white shadow transition cursor-pointer">
+                            <i class="fa-solid fa-align-left mr-1"></i> Teks Tunggal
+                        </button>
+                        <button id="mode-tab-dialogue" onclick="switchMode('dialogue')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-darkbg text-gray-400 border border-bordercolor hover:text-white transition cursor-pointer">
+                            <i class="fa-solid fa-comments mr-1"></i> Percakapan Multi-Speaker
+                        </button>
+                    </div>
+
+                    <!-- Presets Dropdown -->
+                    <select onchange="loadPresetScript(this.value); this.value='';" class="bg-darkbg border border-bordercolor text-gray-300 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-accent cursor-pointer">
+                        <option value="">-- Contoh Skrip --</option>
+                        <option value="podcast">Intro Podcast</option>
+                        <option value="story">Dongeng Singkat</option>
+                        <option value="dialogue">Percakapan Dua Orang</option>
+                        <option value="news">Berita Ekonomi</option>
+                    </select>
+                </div>
+
+                <!-- Single Speaker Input Area -->
+                <div id="single-text-container" class="flex-1 flex flex-col min-h-[200px]">
+                    <textarea id="text-input" placeholder="Ketik atau tempel teks di sini (Bahasa Indonesia, Inggris, atau bahasa lainnya)..." class="w-full flex-1 bg-darkbg border border-bordercolor rounded-xl p-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent resize-none font-sans leading-relaxed custom-scrollbar"></textarea>
+                    
+                    <div class="flex items-center justify-between pt-2 text-[11px] text-gray-500">
+                        <div class="flex items-center space-x-3">
+                            <span><strong id="char-count" class="text-gray-300">0</strong> Karakter</span>
+                            <span>•</span>
+                            <span>Est. durasi: <strong id="est-duration" class="text-gray-300">0s</strong></span>
+                        </div>
+                        <button onclick="clearTextInput()" class="hover:text-red-400 transition cursor-pointer"><i class="fa-solid fa-trash-can mr-1"></i> Bersihkan</button>
+                    </div>
+                </div>
+
+                <!-- Dialogue Multi-Speaker Container -->
+                <div id="dialogue-text-container" class="hidden flex-1 flex-col space-y-3 min-h-[200px]">
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-darkbg p-2.5 rounded-xl border border-bordercolor">
+                            <label class="font-bold text-brandblue block mb-1">Speaker 1 (Joe)</label>
+                            <select id="dialogue-voice-1" class="w-full bg-cardbg border border-bordercolor text-xs rounded-lg p-2 text-white">
+                                <option value="Zephyr" selected>Zephyr (Bright)</option>
+                                <option value="Kore">Kore (Firm)</option>
+                                <option value="Puck">Puck (Upbeat)</option>
+                                <option value="Fenrir">Fenrir (Excitable)</option>
+                            </select>
+                        </div>
+                        <div class="bg-darkbg p-2.5 rounded-xl border border-bordercolor">
+                            <label class="font-bold text-accent block mb-1">Speaker 2 (Jane)</label>
+                            <select id="dialogue-voice-2" class="w-full bg-cardbg border border-bordercolor text-xs rounded-lg p-2 text-white">
+                                <option value="Puck" selected>Puck (Upbeat)</option>
+                                <option value="Fenrir">Fenrir (Excitable)</option>
+                                <option value="Aoede">Aoede (Breezy)</option>
+                                <option value="Charon">Charon (Informative)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <textarea id="dialogue-input" placeholder="Format percakapan:&#10;Joe: Halo Jane, bagaimana kabarmu hari ini?&#10;Jane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!" class="w-full flex-1 bg-darkbg border border-bordercolor rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-accent font-mono resize-none custom-scrollbar min-h-[120px]"></textarea>
+                </div>
+
+                <!-- Generate Action Buttons -->
+                <div class="pt-2 flex items-center gap-3">
+                    <button id="btn-generate" onclick="generateAudio()" class="flex-1 py-3.5 px-6 rounded-xl font-bold text-xs bg-accent hover:bg-accenthover text-white shadow-lg shadow-accent/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span id="btn-generate-text">Hasikan Suara AI</span>
+                    </button>
+                    <button onclick="stopAudioPlayback()" class="p-3.5 rounded-xl bg-darkbg border border-bordercolor text-gray-400 hover:text-white transition cursor-pointer" title="Hentikan Audio">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Audio Player and Visualizer -->
+            <div class="bg-cardbg border border-bordercolor rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-gray-600" id="status-indicator"></div>
+                        <span class="text-xs font-bold text-gray-300" id="player-status-text">Siap Memutar Audio</span>
+                    </div>
+                    <span id="audio-timer" class="text-xs font-mono text-gray-400">00:00 / 00:00</span>
+                </div>
+
+                <!-- Visualizer Canvas Area -->
+                <div class="relative bg-darkbg border border-bordercolor rounded-xl h-24 overflow-hidden flex items-center justify-center">
+                    <canvas id="waveform-canvas" class="w-full h-full block"></canvas>
+                    
+                    <div id="visualizer-empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none">
+                        <i class="fa-solid fa-wave-square text-2xl mb-1"></i>
+                        <span class="text-xs">Klik "Hasilkan Suara AI" untuk melihat visualisasi</span>
+                    </div>
+
+                    <div id="loading-overlay" class="hidden absolute inset-0 bg-darkbg/90 backdrop-blur-sm flex flex-col items-center justify-center space-y-2 z-10">
+                        <div class="w-7 h-7 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                        <span class="text-xs font-medium text-accent">Menghasilkan suara via AI...</span>
+                    </div>
+                </div>
+
+                <!-- Playback Controls -->
+                <div class="flex items-center justify-between pt-1">
+                    <audio id="main-audio-player" class="hidden"></audio>
+                    
+                    <div class="flex items-center space-x-3">
+                        <button id="btn-play-pause" onclick="togglePlayPause()" disabled class="w-10 h-10 rounded-xl bg-accent hover:bg-accenthover disabled:opacity-40 text-white flex items-center justify-center transition shadow-md shadow-accent/20 cursor-pointer">
+                            <i id="play-pause-icon" class="fa-solid fa-play"></i>
+                        </button>
+                        <div>
+                            <p class="text-xs font-bold text-white truncate max-w-[180px]" id="current-track-title">Belum ada audio</p>
+                            <p class="text-[11px] text-gray-500" id="current-track-voice">Voice: -</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button id="btn-download-mp3" onclick="downloadCurrentAudio('mp3')" disabled class="px-3.5 py-2 rounded-xl bg-accent hover:bg-accenthover text-white font-semibold text-xs disabled:opacity-40 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                            <i class="fa-solid fa-file-audio"></i> Unduh MP3
+                        </button>
+                        <button id="btn-download-wav" onclick="downloadCurrentAudio('wav')" disabled class="px-3 py-2 rounded-xl bg-darkbg border border-bordercolor text-gray-300 hover:text-white text-xs disabled:opacity-40 transition font-semibold cursor-pointer">
+                            WAV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generation History Log -->
+            <div class="bg-cardbg border border-bordercolor rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-bordercolor pb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-gray-400"></i> Riwayat Suara Dihasilkan
+                    </h3>
+                    <button onclick="clearHistory()" class="text-[11px] text-gray-400 hover:text-red-400 transition cursor-pointer">Hapus Semua</button>
+                </div>
+
+                <div id="history-list" class="space-y-2 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                    <p class="text-xs text-gray-500 italic text-center py-3">Belum ada riwayat suara yang dibuat.</p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- BLUE ACCENT SETTINGS MODAL -->
+    <div id="api-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#0f172a] border border-accent/40 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
+            
+            <div class="p-5 flex items-center justify-between border-b border-bordercolor">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-accent/10 border border-accent/30 rounded-xl flex items-center justify-center text-accent">
+                        <i class="fa-solid fa-key text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold tracking-wider text-accent uppercase">PENGATURAN API KEY</h3>
+                        <p class="text-[11px] text-gray-400 tracking-wide uppercase">GOOGLE AI STUDIO & OTHERS</p>
+                    </div>
+                </div>
+                <button onclick="closeApiModal()" class="text-gray-400 hover:text-white p-2 text-lg transition cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-5 overflow-y-auto max-h-[75vh]">
+                <div class="bg-accent/5 border border-accent/20 rounded-xl p-3.5 text-xs text-gray-300 flex items-start space-x-3 leading-relaxed">
+                    <div class="w-5 h-5 rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-exclamation text-xs"></i>
+                    </div>
+                    <div>
+                        Masukkan **Google Gemini API Key** pribadi Anda. Anda bisa mendapatkannya secara gratis di{' '}
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-accent font-semibold underline hover:text-blue-400 inline-flex items-center gap-1">
+                            Google AI Studio <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>.
+                    </div>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-200 flex items-center justify-between">
+                            <span>Google Gemini API Key</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-accent font-bold hover:underline">Dapatkan Key ↗</a>
+                        </label>
+                        <input type="password" id="input-gemini-key" placeholder="AIzaSy..." class="w-full bg-[#080d1a] border border-bordercolor focus:border-accent rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 outline-none font-mono">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-200">OpenAI API Key (Opsional)</label>
+                        <input type="password" id="input-openai-key" placeholder="sk-..." class="w-full bg-[#080d1a] border border-bordercolor focus:border-accent rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 outline-none font-mono">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-200">ElevenLabs API Key (Opsional)</label>
+                        <input type="password" id="input-eleven-key" placeholder="eleven_..." class="w-full bg-[#080d1a] border border-bordercolor focus:border-accent rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 outline-none font-mono">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#080d1a] border-t border-bordercolor py-3 px-5 flex items-center justify-end space-x-2">
+                <button onclick="closeApiModal()" class="px-4 py-2 rounded-xl bg-darkbg border border-bordercolor hover:bg-bordercolor text-xs font-semibold text-gray-300 transition cursor-pointer">Batal</button>
+                <button onclick="saveApiKeys()" class="px-4 py-2 rounded-xl bg-accent hover:bg-accenthover text-xs font-bold text-white transition cursor-pointer">Simpan Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Page Footer -->
+    <footer class="border-t border-bordercolor bg-cardbg/50 py-4 text-center text-xs text-gray-500 mt-auto">
+        <p>&copy; 2026 AI Voice Studio — Developed by <a href="https://www.buanamedia.my.id" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Buana Media</a>.</p>
+    </footer>
+
+    <script>
+        const GEMINI_VOICES = [
+            { id: "Zephyr", name: "Zephyr", gender: "female", style: "Bright & Energetik", description: "Cerah, ramah, dan artikulatif", tag: "Populer" },
+            { id: "Kore", name: "Kore", gender: "female", style: "Firm & Berwibawa", description: "Tegas, profesional, dan meyakinkan", tag: "Bisnis" },
+            { id: "Leda", name: "Leda", gender: "female", style: "Youthful & Lembut", description: "Muda, bersih, dan lembut", tag: "Lembut" },
+            { id: "Aoede", name: "Aoede", gender: "female", style: "Breezy & Santai", description: "Santai, natural, dan menyenangkan", tag: "Casual" },
+            { id: "Callirrhoe", name: "Callirrhoe", gender: "female", style: "Easy-going", description: "Tenang dan halus", tag: "Santai" },
+            { id: "Autonoe", name: "Autonoe", gender: "female", style: "Bright & Jelas", description: "Artikulasi tinggi dan cerah", tag: "Edukasi" },
+            { id: "Puck", name: "Puck", gender: "male", style: "Upbeat & Ceria", description: "Penuh semangat dan ekspresif", tag: "Ceria" },
+            { id: "Charon", name: "Charon", gender: "male", style: "Informative & Dalam", description: "Formal, jelas, cocok untuk narasi", tag: "Formal" },
+            { id: "Fenrir", name: "Fenrir", gender: "male", style: "Excitable & Antusias", description: "Dinamis dan penuh energi", tag: "Antusias" },
+            { id: "Enceladus", name: "Enceladus", gender: "male", style: "Breathy & Berbisik", description: "Suara hangat dan lembut", tag: "ASMR" },
+            { id: "Iapetus", name: "Iapetus", gender: "male", style: "Clear & Netral", description: "Suara jernih dan berwibawa", tag: "Berita" }
+        ];
+
+        let state = {
+            currentEngine: 'gemini',
+            selectedVoice: 'Zephyr',
+            mode: 'single',
+            emotionPrefix: '',
+            audioPcm16: null,
+            audioSampleRate: 24000,
+            mp3Blob: null,
+            wavBlob: null,
+            audioUrl: null,
+            history: [],
+            isPlaying: false
         };
 
-        const handleEnded = () => {
-          setIsPlaying(false);
-          stopVisualizer();
+        window.openApiModal = function() {
+            document.getElementById('input-gemini-key').value = localStorage.getItem('gemini_api_key') || '';
+            document.getElementById('input-openai-key').value = localStorage.getItem('openai_api_key') || '';
+            document.getElementById('input-eleven-key').value = localStorage.getItem('eleven_api_key') || '';
+            document.getElementById('api-modal').classList.remove('hidden');
         };
 
-        player.addEventListener('timeupdate', handleTimeUpdate);
-        player.addEventListener('ended', handleEnded);
-
-        return () => {
-          player.removeEventListener('timeupdate', handleTimeUpdate);
-          player.removeEventListener('ended', handleEnded);
-        };
-      }, []);
-
-      const showToast = (message, type = 'info') => {
-        setToast({ message, type });
-        setTimeout(() => setToast(null), 3000);
-      };
-
-      // Key Management Handlers
-      const handleAddKey = (e) => {
-        e.preventDefault();
-        const trimmed = newKeyInput.trim();
-        if (!trimmed) return;
-
-        if (apiKeys.includes(trimmed)) {
-          showToast('API Key ini sudah tersimpan dalam daftar.', 'warning');
-          return;
-        }
-
-        const updated = [...apiKeys, trimmed];
-        setApiKeys(updated);
-        localStorage.setItem('pv_tts_api_keys', JSON.stringify(updated));
-        setNewKeyInput('');
-        showToast('API Key berhasil ditambahkan!', 'success');
-      };
-
-      const handleRemoveKey = (index) => {
-        const updated = apiKeys.filter((_, i) => i !== index);
-        setApiKeys(updated);
-        localStorage.setItem('pv_tts_api_keys', JSON.stringify(updated));
-      };
-
-      const toggleKeyVisibility = (index) => {
-        setVisibleKeysMap(prev => ({ ...prev, [index]: !prev[index] }));
-      };
-
-      const copyKeyToClipboard = (keyStr, index) => {
-        navigator.clipboard.writeText(keyStr);
-        setCopiedKeyIndex(index);
-        setTimeout(() => setCopiedKeyIndex(null), 1500);
-      };
-
-      const maskKeyStr = (str) => {
-        if (!str || str.length < 10) return '••••••••';
-        return `${str.substring(0, 6)}...${str.substring(str.length - 4)}`;
-      };
-
-      // Audio Conversion Helper Functions
-      const base64ToArrayBuffer = (base64) => {
-        const binaryString = window.atob(base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes.buffer;
-      };
-
-      const pcmToWavBlob = (pcm16Data, sampleRate = 24000) => {
-        const buffer = new ArrayBuffer(44 + pcm16Data.length * 2);
-        const view = new DataView(buffer);
-
-        const writeString = (v, offset, str) => {
-          for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+        window.closeApiModal = function() {
+            document.getElementById('api-modal').classList.add('hidden');
         };
 
-        writeString(view, 0, 'RIFF');
-        view.setUint32(4, 36 + pcm16Data.length * 2, true);
-        writeString(view, 8, 'WAVE');
-        writeString(view, 12, 'fmt ');
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, 1, true);
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * 2, true);
-        view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true);
-        writeString(view, 36, 'data');
-        view.setUint32(40, pcm16Data.length * 2, true);
+        window.saveApiKeys = function() {
+            const geminiKey = document.getElementById('input-gemini-key').value.trim();
+            const openaiKey = document.getElementById('input-openai-key').value.trim();
+            const elevenKey = document.getElementById('input-eleven-key').value.trim();
 
-        let offset = 44;
-        for (let i = 0; i < pcm16Data.length; i++, offset += 2) {
-          view.setInt16(offset, pcm16Data[i], true);
-        }
+            if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey); else localStorage.removeItem('gemini_api_key');
+            if (openaiKey) localStorage.setItem('openai_api_key', openaiKey); else localStorage.removeItem('openai_api_key');
+            if (elevenKey) localStorage.setItem('eleven_api_key', elevenKey); else localStorage.removeItem('eleven_api_key');
 
-        return new Blob([buffer], { type: 'audio/wav' });
-      };
+            closeApiModal();
+            showToast('Pengaturan API Key berhasil disimpan!', 'success');
+        };
 
-      const pcmToMp3Blob = (pcm16Data, sampleRate = 24000) => {
-        if (typeof lamejs === 'undefined') {
-          return pcmToWavBlob(pcm16Data, sampleRate);
-        }
-        const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
-        const sampleBlockSize = 1152;
-        const mp3Data = [];
-
-        for (let i = 0; i < pcm16Data.length; i += sampleBlockSize) {
-          const sampleChunk = pcm16Data.subarray(i, i + sampleBlockSize);
-          const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
-          if (mp3buf.length > 0) mp3Data.push(mp3buf);
-        }
-        const mp3buf = mp3encoder.flush();
-        if (mp3buf.length > 0) mp3Data.push(mp3buf);
-
-        return new Blob(mp3Data, { type: 'audio/mp3' });
-      };
-
-      // Visualizer Canvas Handler
-      const startVisualizer = () => {
-        stopVisualizer();
-        drawVisualizer();
-      };
-
-      const stopVisualizer = () => {
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-      };
-
-      const drawVisualizer = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-
-        const width = canvas.width;
-        const height = canvas.height;
-        const bars = 36;
-        const barWidth = width / bars - 2;
-
-        ctx.clearRect(0, 0, width, height);
-
-        for (let i = 0; i < bars; i++) {
-          const barHeight = Math.random() * (height * 0.7) + 10;
-          const x = i * (barWidth + 2);
-          const y = (height - barHeight) / 2;
-
-          const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
-          gradient.addColorStop(0, '#38bdf8');
-          gradient.addColorStop(1, '#8b5cf6');
-
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.roundRect(x, y, barWidth, barHeight, 4);
-          ctx.fill();
-        }
-
-        animFrameRef.current = requestAnimationFrame(drawVisualizer);
-      };
-
-      // Generate Audio Trigger with Multi-Key Fallback Engine
-      const handleGenerateAudio = async () => {
-        const activeText = inputMode === 'single' ? textInput.trim() : dialogueInput.trim();
-        if (!activeText) {
-          showToast('Ketikkan teks terlebih dahulu sebelum menghasilkan suara!', 'warning');
-          return;
-        }
-
-        if (currentEngine === 'gemini' && apiKeys.length === 0) {
-          setShowApiKeyModal(true);
-          return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-          if (currentEngine === 'webspeech') {
-            generateWebSpeech(activeText);
-            return;
-          }
-
-          let payload;
-          if (inputMode === 'dialogue') {
-            payload = {
-              contents: [{ parts: [{ text: `TTS the following conversation:\n${activeText}` }] }],
-              generationConfig: {
-                responseModalities: ["AUDIO"],
-                speechConfig: {
-                  multiSpeakerVoiceConfig: {
-                    speakerVoiceConfigs: [
-                      { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker1Voice } } },
-                      { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker2Voice } } }
-                    ]
-                  }
+        window.switchEngine = function(engine) {
+            state.currentEngine = engine;
+            
+            ['gemini', 'webspeech', 'openai', 'elevenlabs'].forEach(e => {
+                const btn = document.getElementById(`engine-btn-${e}`);
+                if (!btn) return;
+                if (e === engine) {
+                    btn.className = "engine-btn p-3 rounded-xl border border-accent bg-accent/10 text-white font-medium flex flex-col items-start gap-1 transition-all shadow-md cursor-pointer";
+                } else {
+                    btn.className = "engine-btn p-3 rounded-xl border border-bordercolor bg-darkbg text-gray-400 font-medium flex flex-col items-start gap-1 transition-all hover:text-white cursor-pointer";
                 }
-              },
-              model: "gemini-2.5-flash-preview-tts"
+            });
+
+            const emotionSec = document.getElementById('gemini-emotion-section');
+            if (emotionSec) {
+                if (engine === 'gemini') emotionSec.classList.remove('hidden');
+                else emotionSec.classList.add('hidden');
+            }
+
+            renderVoiceList();
+        };
+
+        window.switchMode = function(mode) {
+            state.mode = mode;
+            const singleContainer = document.getElementById('single-text-container');
+            const dialogueContainer = document.getElementById('dialogue-text-container');
+            const singleTab = document.getElementById('mode-tab-single');
+            const dialogueTab = document.getElementById('mode-tab-dialogue');
+
+            if (mode === 'single') {
+                singleContainer?.classList.remove('hidden');
+                dialogueContainer?.classList.add('hidden');
+
+                singleTab.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-accent text-white shadow transition cursor-pointer";
+                dialogueTab.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-darkbg text-gray-400 border border-bordercolor hover:text-white transition cursor-pointer";
+            } else {
+                singleContainer?.classList.add('hidden');
+                dialogueContainer?.classList.remove('hidden');
+
+                dialogueTab.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-accent text-white shadow transition cursor-pointer";
+                singleTab.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-darkbg text-gray-400 border border-bordercolor hover:text-white transition cursor-pointer";
+            }
+            updateCharCount();
+        };
+
+        window.setEmotion = function(prefix) {
+            state.emotionPrefix = prefix;
+            showToast(prefix ? `Instruksi emosi diatur: "${prefix}"` : 'Instruksi emosi dibersihkan', 'info');
+        };
+
+        window.loadPresetScript = function(type) {
+            if (!type) return;
+            const textInput = document.getElementById('text-input');
+            const dialogueInput = document.getElementById('dialogue-input');
+            
+            const presets = {
+                podcast: "Selamat datang di Podcast Buana Tech! Hari ini kita akan membahas perkembangan kecerdasan buatan dan masa depan teknologi suara.",
+                story: "Di sebuah hutan yang lebat, hiduplah seekor kancil yang sangat cerdik. Setiap hari ia berkeliling mencari makan sambil menyapa teman-temannya.",
+                dialogue: "Joe: Halo Jane, bagaimana kabarmu hari ini?\nJane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!",
+                news: "Berita kilat hari ini. Pasar saham menguat setelah peluncuran teknologi AI terbaru yang memungkinkan sintesis suara hiper-realistis."
             };
-          } else {
-            const fullPrompt = emotionPrefix ? `${emotionPrefix}${activeText}` : activeText;
-            payload = {
-              contents: [{ parts: [{ text: fullPrompt }] }],
-              generationConfig: {
-                responseModalities: ["AUDIO"],
-                speechConfig: {
-                  voiceConfig: {
-                    prebuiltVoiceConfig: { voiceName: selectedVoice }
-                  }
+
+            if (presets[type]) {
+                if (state.mode === 'dialogue') {
+                    if (dialogueInput) dialogueInput.value = presets[type];
+                } else {
+                    if (textInput) textInput.value = presets[type];
                 }
-              },
-              model: "gemini-2.5-flash-preview-tts"
-            };
-          }
+                updateCharCount();
+                showToast('Skrip sampel berhasil dimuat!', 'success');
+            }
+        };
 
-          let pcmBase64 = null;
-          let mimeType = "audio/L16;rate=24000";
-          let lastErrorMessage = '';
+        window.clearTextInput = function() {
+            const input = document.getElementById('text-input');
+            if (input) input.value = '';
+            updateCharCount();
+        };
 
-          for (let k = 0; k < apiKeys.length; k++) {
-            const key = apiKeys[k];
+        function updateCharCount() {
+            const text = state.mode === 'single'
+                ? (document.getElementById('text-input')?.value || '')
+                : (document.getElementById('dialogue-input')?.value || '');
+            
+            const charCount = text.length;
+            const charCountEl = document.getElementById('char-count');
+            if (charCountEl) charCountEl.innerText = charCount;
+
+            const estSeconds = Math.round(charCount / 15);
+            const estDurEl = document.getElementById('est-duration');
+            if (estDurEl) estDurEl.innerText = `${estSeconds}s`;
+        }
+
+        window.selectVoice = function(voiceId) {
+            state.selectedVoice = voiceId;
+            renderVoiceList();
+        };
+
+        window.filterVoices = function() {
+            const query = (document.getElementById('voice-search')?.value || '').toLowerCase();
+            const selectedGender = document.getElementById('voice-gender-filter')?.value || 'all';
+            const items = document.querySelectorAll('.voice-card');
+
+            items.forEach(item => {
+                const text = item.dataset.text || '';
+                const itemGender = item.dataset.gender || '';
+
+                const matchesQuery = text.includes(query);
+                const matchesGender = selectedGender === 'all' || itemGender === selectedGender;
+
+                item.style.display = (matchesQuery && matchesGender) ? 'flex' : 'none';
+            });
+        };
+
+        function renderVoiceList() {
+            const container = document.getElementById('voice-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let voices = [];
+
+            if (state.currentEngine === 'gemini') {
+                voices = GEMINI_VOICES;
+            } else if (state.currentEngine === 'webspeech') {
+                const sysVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+                voices = sysVoices.map(v => ({
+                    id: v.name,
+                    name: v.name,
+                    gender: 'female',
+                    style: v.lang,
+                    description: `Suara browser (${v.lang})`,
+                    tag: v.lang.toUpperCase()
+                }));
+            } else if (state.currentEngine === 'openai') {
+                voices = [
+                    { id: "alloy", name: "Alloy", gender: "female", style: "Seimbang", description: "Versatil & Netral", tag: "OpenAI" },
+                    { id: "nova", name: "Nova", gender: "female", style: "Enerjik", description: "Cerah & Bersemangat", tag: "OpenAI" },
+                    { id: "echo", name: "Echo", gender: "male", style: "Hangat", description: "Suara hangat & tenang", tag: "OpenAI" }
+                ];
+            } else if (state.currentEngine === 'elevenlabs') {
+                voices = [
+                    { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", gender: "female", style: "Natural", description: "Tenang & Profesional", tag: "ElevenLabs" },
+                    { id: "ErXwobaYiN019PkySvjV", name: "Antoni", gender: "male", style: "Dalam", description: "Naratif & Tegas", tag: "ElevenLabs" }
+                ];
+            }
+
+            const badge = document.getElementById('voice-count-badge');
+            if (badge) badge.innerText = `${voices.length} Suara Tersedia`;
+
+            if (voices.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 py-4 text-center">Memuat suara...</p>`;
+                return;
+            }
+
+            if (!voices.some(v => v.id === state.selectedVoice)) {
+                state.selectedVoice = voices[0].id;
+            }
+
+            voices.forEach(v => {
+                const isSelected = v.id === state.selectedVoice;
+                const card = document.createElement('div');
+                card.dataset.gender = v.gender;
+                card.dataset.text = `${v.name} ${v.description} ${v.style} ${v.tag}`.toLowerCase();
+                card.className = `voice-card p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${
+                    isSelected ? 'border-accent bg-accent/10 text-white' : 'border-bordercolor bg-darkbg hover:border-gray-500 text-gray-300'
+                }`;
+                card.onclick = () => selectVoice(v.id);
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3 truncate">
+                        <div class="w-8 h-8 rounded-lg ${isSelected ? 'bg-accent text-white' : 'bg-cardbg text-gray-400 border border-bordercolor'} flex items-center justify-center font-bold text-xs shrink-0">
+                            ${v.gender === 'female' ? '👩' : '👨'}
+                        </div>
+                        <div class="truncate">
+                            <div class="flex items-center gap-1.5">
+                                <h4 class="text-xs font-bold truncate">${v.name}</h4>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-bordercolor text-gray-300">${v.tag || 'AI'}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-400 truncate">${v.description || v.style}</p>
+                        </div>
+                    </div>
+                    <div class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-accent bg-accent' : 'border-gray-600'}">
+                        ${isSelected ? '<i class="fa-solid fa-check text-[10px] text-white"></i>' : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            filterVoices();
+        }
+
+        window.testSelectedVoice = async function() {
+            const sampleText = "Selamat datang di AI Voice Studio dari Buana Media!";
+            generateAudioWithText(sampleText);
+        };
+
+        window.generateAudio = async function() {
+            const text = state.mode === 'single' 
+                ? (document.getElementById('text-input')?.value || '').trim()
+                : (document.getElementById('dialogue-input')?.value || '').trim();
+
+            if (!text) {
+                showToast('Ketikkan teks terlebih dahulu!', 'warning');
+                return;
+            }
+            generateAudioWithText(text);
+        };
+
+        async function generateAudioWithText(text) {
+            setLoading(true);
             try {
-              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`, {
+                if (state.currentEngine === 'gemini') {
+                    await generateGeminiTTS(text);
+                } else if (state.currentEngine === 'webspeech') {
+                    generateWebSpeechTTS(text);
+                } else {
+                    showToast('Silakan pilih engine Gemini atau WebSpeech', 'info');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'Terjadi kesalahan sistem', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            return bytes.buffer;
+        }
+
+        function pcmToWavBlob(pcm16Data, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44 + pcm16Data.length * 2);
+            const view = new DataView(buffer);
+
+            const writeString = (v, offset, str) => {
+                for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16Data.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16Data.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcm16Data.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16Data[i], true);
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function pcmToMp3Blob(pcm16Data, sampleRate = 24000) {
+            if (typeof lamejs === 'undefined') return pcmToWavBlob(pcm16Data, sampleRate);
+
+            const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+            const sampleBlockSize = 1152;
+            const mp3Data = [];
+
+            for (let i = 0; i < pcm16Data.length; i += sampleBlockSize) {
+                const sampleChunk = pcm16Data.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                if (mp3buf.length > 0) mp3Data.push(mp3buf);
+            }
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+            return new Blob(mp3Data, { type: 'audio/mp3' });
+        }
+
+        async function generateGeminiTTS(text) {
+            const userApiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!userApiKey) {
+                openApiModal();
+                throw new Error('Konfigurasikan API Key Google Gemini terlebih dahulu');
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${userApiKey}`;
+            const fullPrompt = state.emotionPrefix ? `${state.emotionPrefix}${text}` : text;
+            
+            const payload = {
+                contents: [{ parts: [{ text: fullPrompt }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: state.selectedVoice }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-              });
+            });
 
-              if (res.ok) {
-                const data = await res.json();
-                const inlinePart = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-                if (inlinePart && inlinePart.data) {
-                  pcmBase64 = inlinePart.data;
-                  mimeType = inlinePart.mimeType || mimeType;
-                  break;
-                }
-              } else {
+            if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
-                lastErrorMessage = errData.error?.message || `Key #${k+1} gagal memproses audio.`;
-              }
-            } catch (err) {
-              lastErrorMessage = err.message;
+                throw new Error(errData.error?.message || `Error status: ${res.status}`);
             }
-          }
 
-          if (!pcmBase64) {
-            throw new Error(lastErrorMessage || 'Gagal menghasilkan suara dari API Key yang tersedia.');
-          }
+            const data = await res.json();
+            const inlinePart = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
 
-          let sampleRate = 24000;
-          const rateMatch = mimeType.match(/rate=(\d+)/);
-          if (rateMatch && rateMatch[1]) sampleRate = parseInt(rateMatch[1], 10);
+            if (!inlinePart || !inlinePart.data) throw new Error('Format audio tidak terdeteksi');
 
-          const pcmBuffer = base64ToArrayBuffer(pcmBase64);
-          const pcm16 = new Int16Array(pcmBuffer);
-
-          const generatedMp3 = pcmToMp3Blob(pcm16, sampleRate);
-          const generatedWav = pcmToWavBlob(pcm16, sampleRate);
-
-          setMp3Blob(generatedMp3);
-          setWavBlob(generatedWav);
-
-          const audioUrl = URL.createObjectURL(generatedMp3);
-          playAudioUrl(audioUrl, activeText, `Gemini (${selectedVoice})`);
-
-        } catch (err) {
-          setError(err.message || 'Terjadi kesalahan saat memproses audio.');
-          showToast(err.message || 'Gagal membuat audio.', 'error');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      const generateWebSpeech = (text) => {
-        if (!('speechSynthesis' in window)) {
-          setError('Browser Anda tidak mendukung Web Speech API.');
-          setIsLoading(false);
-          return;
-        }
-
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        const sysVoices = window.speechSynthesis.getVoices();
-        const selected = sysVoices.find(v => v.name === selectedVoice);
-        if (selected) utterance.voice = selected;
-
-        utterance.rate = speechRate;
-        utterance.pitch = speechPitch;
-
-        utterance.onstart = () => {
-          setIsLoading(false);
-          setIsPlaying(true);
-          setCurrentTrackTitle(text.length > 30 ? text.substring(0, 30) + '...' : text);
-          setCurrentTrackVoice(`Voice: WebSpeech (${selectedVoice})`);
-          startVisualizer();
-        };
-
-        utterance.onend = () => {
-          setIsPlaying(false);
-          stopVisualizer();
-        };
-
-        utterance.onerror = () => {
-          setIsLoading(false);
-          showToast('Gagal memutar audio WebSpeech', 'error');
-        };
-
-        window.speechSynthesis.speak(utterance);
-        addHistoryItem(text, `WebSpeech (${selectedVoice})`, null);
-      };
-
-      const playAudioUrl = (url, text, voiceLabel) => {
-        const player = audioRef.current;
-        if (!player) return;
-
-        player.src = url;
-        player.play();
-
-        setIsPlaying(true);
-        setCurrentTrackTitle(text.length > 30 ? text.substring(0, 30) + '...' : text);
-        setCurrentTrackVoice(`Voice: ${voiceLabel}`);
-        startVisualizer();
-
-        addHistoryItem(text, voiceLabel, url);
-        showToast('Suara AI berhasil dihasilkan & diputar!', 'success');
-      };
-
-      const addHistoryItem = (text, voiceInfo, url) => {
-        const item = {
-          id: Date.now(),
-          text: text.length > 45 ? text.substring(0, 45) + '...' : text,
-          voice: voiceInfo,
-          url: url,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        const updated = [item, ...history.slice(0, 14)];
-        setHistory(updated);
-        localStorage.setItem('pv_tts_history', JSON.stringify(updated));
-      };
-
-      const togglePlayPause = () => {
-        if (currentEngine === 'webspeech' && window.speechSynthesis) {
-          if (window.speechSynthesis.speaking) {
-            if (window.speechSynthesis.paused) {
-              window.speechSynthesis.resume();
-              setIsPlaying(true);
-              startVisualizer();
-            } else {
-              window.speechSynthesis.pause();
-              setIsPlaying(false);
-              stopVisualizer();
-            }
-            return;
-          }
-        }
-
-        const player = audioRef.current;
-        if (!player || !player.src) return;
-
-        if (player.paused) {
-          player.play();
-          setIsPlaying(true);
-          startVisualizer();
-        } else {
-          player.pause();
-          setIsPlaying(false);
-          stopVisualizer();
-        }
-      };
-
-      const stopAudioPlayback = () => {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        const player = audioRef.current;
-        if (player) {
-          player.pause();
-          player.currentTime = 0;
-        }
-        setIsPlaying(false);
-        stopVisualizer();
-      };
-
-      const downloadAudio = (format) => {
-        const targetBlob = format === 'mp3' ? mp3Blob : wavBlob;
-        if (!targetBlob) {
-          showToast('Tidak ada file audio yang tersedia untuk diunduh', 'warning');
-          return;
-        }
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(targetBlob);
-        a.download = `AI-Voice-${Date.now()}.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast(`Audio diunduh (Format ${format.toUpperCase()})`, 'success');
-      };
-
-      const loadPresetScript = (type) => {
-        if (!type) return;
-        const presets = {
-          podcast: "Selamat datang di Podcast Buana Tech! Hari ini kita akan membahas perkembangan kecerdasan buatan dan masa depan teknologi suara.",
-          story: "Di sebuah hutan yang lebat, hiduplah seekor kancil yang sangat cerdik. Setiap hari ia berkeliling mencari makan sambil menyapa teman-temannya.",
-          dialogue: "Joe: Halo Jane, bagaimana kabarmu hari ini?\nJane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!",
-          news: "Berita kilat hari ini. Pasar saham menguat setelah peluncuran teknologi AI terbaru yang memungkinkan sintesis suara hiper-realistis."
-        };
-        if (presets[type]) {
-          if (inputMode === 'dialogue') setDialogueInput(presets[type]);
-          else setTextInput(presets[type]);
-          showToast('Skrip sampel berhasil dimuat!', 'success');
-        }
-      };
-
-      const formatTime = (sec) => {
-        if (isNaN(sec)) return "00:00";
-        const m = Math.floor(sec / 60);
-        const s = Math.floor(sec % 60);
-        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-      };
-
-      // Filtered Voice List
-      const filteredVoices = GEMINI_VOICES.filter(v => {
-        const matchesQuery = `${v.name} ${v.description} ${v.style} ${v.tag}`.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesGender = genderFilter === 'all' || v.gender === genderFilter;
-        return matchesQuery && matchesGender;
-      });
-
-      return (
-        <div className="flex flex-col min-h-screen">
-          <audio ref={audioRef} className="hidden" />
-
-          {/* Toast Notification */}
-          {toast && (
-            <div className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transition ${
-              toast.type === 'success' ? 'bg-emerald-600 text-white' :
-              toast.type === 'error' ? 'bg-red-600 text-white' :
-              toast.type === 'warning' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-200 border border-bordercolor'
-            }`}>
-              <i className={`fa-solid ${toast.type === 'success' ? 'fa-circle-check' : toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}`}></i>
-              <span>{toast.message}</span>
-            </div>
-          )}
-
-          {/* Header */}
-          <header className="sticky top-0 z-40 border-b border-bordercolor bg-[#0a0a0a]/90 backdrop-blur px-4 sm:px-8 py-3.5 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg text-white">
-                <i className="fa-solid fa-wand-magic-sparkles text-lg"></i>
-              </div>
-              <div>
-                <h1 className="text-lg font-extrabold text-white leading-tight">AI Voice Studio</h1>
-                <p className="text-[11px] text-brandblue font-medium">Text-to-Speech Multi-Engine AI</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Gemini 2.5 TTS Ready
-              </span>
-
-              <button
-                onClick={() => setShowApiKeyModal(true)}
-                className="text-xs bg-white/5 hover:bg-white/10 text-gray-200 border border-bordercolor px-3.5 py-2 rounded-xl transition font-semibold flex items-center gap-2"
-              >
-                <i className="fa-solid fa-key text-brandblue"></i>
-                <span>{apiKeys.length} Key Tersimpan</span>
-              </button>
-            </div>
-          </header>
-
-          {/* Main Grid */}
-          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            const pcmBuffer = base64ToArrayBuffer(inlinePart.data);
+            const pcm16 = new Int16Array(pcmBuffer);
             
-            {/* LEFT COLUMN: Controls & Voice Selection */}
-            <section className="lg:col-span-5 space-y-5">
-              
-              {/* Engine Selection */}
-              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
-                    <i className="fa-solid fa-sliders text-brandblue"></i> Pilih Engine Suara
-                  </h2>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-brandblue/10 text-brandblue font-semibold">Free Tier</span>
-                </div>
+            state.mp3Blob = pcmToMp3Blob(pcm16, 24000);
+            state.wavBlob = pcmToWavBlob(pcm16, 24000);
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    onClick={() => setCurrentEngine('gemini')}
-                    className={`p-3 rounded-xl border text-left transition flex flex-col gap-1 ${currentEngine === 'gemini' ? 'border-brandblue bg-brandblue/10 text-white shadow' : 'border-bordercolor bg-black/40 text-gray-400 hover:text-white'}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-bold text-xs"><i className="fa-brands fa-google text-brandblue mr-1"></i> Gemini AI</span>
-                      <span className="text-[9px] bg-brandblue text-black font-extrabold px-1.5 py-0.5 rounded">Rekomendasi</span>
+            playAudioBlob(state.mp3Blob, text, `Gemini (${state.selectedVoice})`);
+        }
+
+        function generateWebSpeechTTS(text) {
+            if (!('speechSynthesis' in window)) throw new Error('Web Speech API tidak didukung');
+
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            const sysVoices = window.speechSynthesis.getVoices();
+            const selected = sysVoices.find(v => v.name === state.selectedVoice);
+            if (selected) utterance.voice = selected;
+
+            utterance.onstart = () => {
+                setLoading(false);
+                state.isPlaying = true;
+                document.getElementById('btn-play-pause').disabled = false;
+                document.getElementById('play-pause-icon').className = "fa-solid fa-pause";
+                document.getElementById('status-indicator').className = "w-3 h-3 rounded-full bg-emerald-400 animate-pulse";
+                document.getElementById('player-status-text').innerText = "Memutar Audio Browser";
+                document.getElementById('current-track-title').innerText = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                document.getElementById('current-track-voice').innerText = `Voice: ${state.selectedVoice}`;
+                startVisualizerAnimation();
+            };
+
+            utterance.onend = () => {
+                document.getElementById('play-pause-icon').className = "fa-solid fa-play";
+                document.getElementById('status-indicator').className = "w-3 h-3 rounded-full bg-gray-600";
+                document.getElementById('player-status-text').innerText = "Selesai Memutar";
+                state.isPlaying = false;
+                stopVisualizerAnimation();
+            };
+
+            window.speechSynthesis.speak(utterance);
+            addToHistory(text, `WebSpeech (${state.selectedVoice})`, null);
+        }
+
+        function playAudioBlob(blob, text, voiceInfo) {
+            if (state.audioUrl) URL.revokeObjectURL(state.audioUrl);
+            state.audioUrl = URL.createObjectURL(blob);
+
+            const player = document.getElementById('main-audio-player');
+            player.src = state.audioUrl;
+            player.play();
+
+            document.getElementById('btn-play-pause').disabled = false;
+            document.getElementById('btn-download-mp3').disabled = false;
+            document.getElementById('btn-download-wav').disabled = false;
+            document.getElementById('play-pause-icon').className = "fa-solid fa-pause";
+            document.getElementById('current-track-title').innerText = text.length > 30 ? text.substring(0, 30) + '...' : text;
+            document.getElementById('current-track-voice').innerText = `Voice: ${voiceInfo}`;
+            
+            document.getElementById('status-indicator').className = "w-3 h-3 rounded-full bg-emerald-400 animate-pulse";
+            document.getElementById('player-status-text').innerText = "Memutar Audio AI";
+
+            state.isPlaying = true;
+            startVisualizerAnimation();
+
+            player.onended = () => {
+                document.getElementById('play-pause-icon').className = "fa-solid fa-play";
+                document.getElementById('status-indicator').className = "w-3 h-3 rounded-full bg-gray-600";
+                document.getElementById('player-status-text').innerText = "Selesai Memutar";
+                state.isPlaying = false;
+                stopVisualizerAnimation();
+            };
+
+            addToHistory(text, voiceInfo, state.audioUrl);
+            showToast('Suara AI berhasil diputar!', 'success');
+        }
+
+        window.togglePlayPause = function() {
+            const player = document.getElementById('main-audio-player');
+            if (state.currentEngine === 'webspeech' && window.speechSynthesis) {
+                if (window.speechSynthesis.speaking) {
+                    if (window.speechSynthesis.paused) {
+                        window.speechSynthesis.resume();
+                        document.getElementById('play-pause-icon').className = "fa-solid fa-pause";
+                        state.isPlaying = true;
+                        startVisualizerAnimation();
+                    } else {
+                        window.speechSynthesis.pause();
+                        document.getElementById('play-pause-icon').className = "fa-solid fa-play";
+                        state.isPlaying = false;
+                        stopVisualizerAnimation();
+                    }
+                    return;
+                }
+            }
+
+            if (!player.src) return;
+
+            if (player.paused) {
+                player.play();
+                document.getElementById('play-pause-icon').className = "fa-solid fa-pause";
+                state.isPlaying = true;
+                startVisualizerAnimation();
+            } else {
+                player.pause();
+                document.getElementById('play-pause-icon').className = "fa-solid fa-play";
+                state.isPlaying = false;
+                stopVisualizerAnimation();
+            }
+        };
+
+        window.stopAudioPlayback = function() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            const player = document.getElementById('main-audio-player');
+            if (player) {
+                player.pause();
+                player.currentTime = 0;
+            }
+            document.getElementById('play-pause-icon').className = "fa-solid fa-play";
+            document.getElementById('status-indicator').className = "w-3 h-3 rounded-full bg-gray-600";
+            document.getElementById('player-status-text').innerText = "Dihentikan";
+            state.isPlaying = false;
+            stopVisualizerAnimation();
+        };
+
+        window.downloadCurrentAudio = function(format = 'mp3') {
+            let targetBlob = format === 'mp3' ? state.mp3Blob : state.wavBlob;
+            if (!targetBlob) {
+                showToast('Tidak ada audio untuk diunduh', 'warning');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(targetBlob);
+            a.download = `AI-Voice-${Date.now()}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast(`Audio berhasil diunduh (${format.toUpperCase()})`, 'success');
+        };
+
+        let visualizerAnimFrame = null;
+        function startVisualizerAnimation() {
+            stopVisualizerAnimation();
+            document.getElementById('visualizer-empty-state')?.classList.add('hidden');
+            drawVisualizer();
+        }
+
+        function stopVisualizerAnimation() {
+            if (visualizerAnimFrame) cancelAnimationFrame(visualizerAnimFrame);
+            const canvas = document.getElementById('waveform-canvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            if (!state.isPlaying) {
+                document.getElementById('visualizer-empty-state')?.classList.remove('hidden');
+            }
+        }
+
+        function drawVisualizer() {
+            const canvas = document.getElementById('waveform-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const bars = 36;
+            const barWidth = width / bars - 2;
+
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < bars; i++) {
+                const barHeight = state.isPlaying ? Math.random() * (height * 0.7) + 10 : 4;
+                const x = i * (barWidth + 2);
+                const y = (height - barHeight) / 2;
+
+                const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+                gradient.addColorStop(0, '#3b82f6');
+                gradient.addColorStop(1, '#60a5fa');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.roundRect(x, y, barWidth, barHeight, 4);
+                ctx.fill();
+            }
+
+            if (state.isPlaying) {
+                visualizerAnimFrame = requestAnimationFrame(drawVisualizer);
+            }
+        }
+
+        function addToHistory(text, voice, audioUrl) {
+            const item = {
+                id: Date.now(),
+                text: text.length > 50 ? text.substring(0, 50) + '...' : text,
+                voice: voice,
+                url: audioUrl,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            state.history.unshift(item);
+            if (state.history.length > 10) state.history.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+            if (!container) return;
+
+            if (state.history.length === 0) {
+                container.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-3">Belum ada riwayat suara yang dibuat.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            state.history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "bg-darkbg border border-bordercolor p-2.5 rounded-xl flex items-center justify-between text-xs hover:border-accent/40 transition";
+                div.innerHTML = `
+                    <div class="truncate mr-2">
+                        <p class="font-bold text-gray-200 truncate">${item.text}</p>
+                        <p class="text-[10px] text-gray-500">${item.voice} • ${item.time}</p>
                     </div>
-                    <span className="text-[10px] text-gray-400">Suara AI Realistis</span>
-                  </button>
-
-                  <button
-                    onClick={() => setCurrentEngine('webspeech')}
-                    className={`p-3 rounded-xl border text-left transition flex flex-col gap-1 ${currentEngine === 'webspeech' ? 'border-brandblue bg-brandblue/10 text-white shadow' : 'border-bordercolor bg-black/40 text-gray-400 hover:text-white'}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-bold text-xs"><i className="fa-solid fa-desktop text-purple-400 mr-1"></i> Web Speech</span>
-                      <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Offline</span>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        ${item.url ? `<button onclick="playHistoryItem('${item.url}')" class="p-2 rounded-lg bg-cardbg text-gray-300 hover:text-white hover:bg-accent transition cursor-pointer"><i class="fa-solid fa-play"></i></button>` : ''}
                     </div>
-                    <span className="text-[10px] text-gray-400">Bawaan Browser</span>
-                  </button>
-                </div>
-              </div>
+                `;
+                container.appendChild(div);
+            });
+        }
 
-              {/* Character Voice List */}
-              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
-                    <i className="fa-solid fa-user-gear text-brandpurple"></i> Karakter Suara
-                  </h2>
-                  <span className="text-xs text-gray-400">{filteredVoices.length} Pilihan Suara</span>
-                </div>
+        window.playHistoryItem = function(url) {
+            const player = document.getElementById('main-audio-player');
+            player.src = url;
+            player.play();
+            document.getElementById('play-pause-icon').className = "fa-solid fa-pause";
+            state.isPlaying = true;
+            startVisualizerAnimation();
+        };
 
-                {/* Filter / Search */}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Cari nama suara..."
-                      className="w-full bg-black/50 border border-bordercolor rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-brandblue"
-                    />
-                  </div>
-                  <select
-                    value={genderFilter}
-                    onChange={(e) => setGenderFilter(e.target.value)}
-                    className="bg-black/50 border border-bordercolor rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-brandblue"
-                  >
-                    <option value="all" className="bg-[#0a0a0a]">Semua</option>
-                    <option value="female" className="bg-[#0a0a0a]">👩 Perempuan</option>
-                    <option value="male" className="bg-[#0a0a0a]">👨 Laki-Laki</option>
-                  </select>
-                </div>
+        window.clearHistory = function() {
+            state.history = [];
+            renderHistory();
+            showToast('Riwayat dibersihkan', 'info');
+        };
 
-                {/* Voice Cards Container */}
-                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
-                  {filteredVoices.map((v) => {
-                    const isSelected = v.id === selectedVoice;
-                    return (
-                      <div
-                        key={v.id}
-                        onClick={() => setSelectedVoice(v.id)}
-                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${isSelected ? 'border-brandblue bg-brandblue/10 text-white' : 'border-bordercolor bg-black/40 hover:border-gray-500 text-gray-300'}`}
-                      >
-                        <div className="flex items-center space-x-3 truncate">
-                          <div className={`w-8 h-8 rounded-lg ${isSelected ? 'bg-brandblue text-black' : 'bg-white/10 text-gray-400'} flex items-center justify-center font-bold text-xs shrink-0`}>
-                            {v.gender === 'female' ? '👩' : '👨'}
-                          </div>
-                          <div className="truncate">
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="text-xs font-bold truncate">{v.name}</h4>
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-gray-300">{v.tag}</span>
-                            </div>
-                            <p className="text-[10px] text-gray-400 truncate">{v.description}</p>
-                          </div>
-                        </div>
+        function setLoading(isLoading) {
+            const overlay = document.getElementById('loading-overlay');
+            const btn = document.getElementById('btn-generate');
+            
+            if (isLoading) {
+                overlay?.classList.remove('hidden');
+                if (btn) btn.disabled = true;
+                const btnText = document.getElementById('btn-generate-text');
+                if (btnText) btnText.innerText = 'Memproses...';
+            } else {
+                overlay?.classList.add('hidden');
+                if (btn) btn.disabled = false;
+                const btnText = document.getElementById('btn-generate-text');
+                if (btnText) btnText.innerText = 'Hasilkan Suara AI';
+            }
+        }
 
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-brandblue bg-brandblue' : 'border-gray-600'}`}>
-                          {isSelected && <i className="fa-solid fa-check text-[10px] text-black"></i>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            
+            const bgColors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white',
+                warning: 'bg-amber-600 text-white',
+                info: 'bg-cardbg text-gray-200 border border-bordercolor'
+            };
 
-                {/* Expressive Instructions */}
-                {currentEngine === 'gemini' && (
-                  <div className="pt-3 border-t border-bordercolor space-y-2">
-                    <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
-                      <span><i className="fa-solid fa-masks-theater text-amber-400 mr-1"></i> Ekspresi / Gaya Ucapan</span>
-                      <span className="text-[10px] text-gray-500">Opsional</span>
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                      <button onClick={() => setEmotionPrefix('Bicara dengan ceria dan ramah: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">😊 Ceria</button>
-                      <button onClick={() => setEmotionPrefix('Bicara dengan nada berbisik misterius: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">🤫 Berbisik</button>
-                      <button onClick={() => setEmotionPrefix('Bicara dengan tegas seperti pembawa berita formal: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">🎙️ Berita</button>
-                    </div>
-                  </div>
-                )}
+            toast.className = `px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-200 ${bgColors[type]}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}"></i>
+                <span>${message}</span>
+            `;
 
-                {/* Speed & Pitch Sliders */}
-                <div className="pt-2 border-t border-bordercolor grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <div className="flex justify-between text-gray-400 mb-1">
-                      <span>Speed</span>
-                      <span>{speechRate}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={speechRate}
-                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                      className="w-full accent-brandblue h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-gray-400 mb-1">
-                      <span>Pitch</span>
-                      <span>{speechPitch}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="1.5"
-                      step="0.1"
-                      value={speechPitch}
-                      onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
-                      className="w-full accent-brandblue h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                </div>
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
-              </div>
+        window.onload = function() {
+            renderVoiceList();
 
-            </section>
+            const textInput = document.getElementById('text-input');
+            const dialogueInput = document.getElementById('dialogue-input');
 
-            {/* RIGHT COLUMN: TEXT INPUT & AUDIO PLAYER */}
-            <section className="lg:col-span-7 space-y-5 flex flex-col">
-              
-              {/* Text Input Card */}
-              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4 flex-1 flex flex-col">
-                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setInputMode('single')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${inputMode === 'single' ? 'bg-brandblue text-black' : 'bg-black/40 text-gray-400 border border-bordercolor'}`}
-                    >
-                      <i className="fa-solid fa-align-left mr-1"></i> Teks Tunggal
-                    </button>
-                    <button
-                      onClick={() => setInputMode('dialogue')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${inputMode === 'dialogue' ? 'bg-brandblue text-black' : 'bg-black/40 text-gray-400 border border-bordercolor'}`}
-                    >
-                      <i className="fa-solid fa-comments mr-1"></i> Percakapan Multi-Speaker
-                    </button>
-                  </div>
+            if (textInput) textInput.addEventListener('input', updateCharCount);
+            if (dialogueInput) dialogueInput.addEventListener('input', updateCharCount);
 
-                  <select
-                    onChange={(e) => loadPresetScript(e.target.value)}
-                    defaultValue=""
-                    className="bg-black/50 border border-bordercolor text-gray-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-brandblue"
-                  >
-                    <option value="" disabled>-- Contoh Skrip --</option>
-                    <option value="podcast" className="bg-[#0a0a0a]">Intro Podcast</option>
-                    <option value="story" className="bg-[#0a0a0a]">Dongeng Singkat</option>
-                    <option value="dialogue" className="bg-[#0a0a0a]">Percakapan Dua Orang</option>
-                    <option value="news" className="bg-[#0a0a0a]">Berita Ekonomi</option>
-                  </select>
-                </div>
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    if (state.currentEngine === 'webspeech') renderVoiceList();
+                };
+            }
 
-                {inputMode === 'single' ? (
-                  <div className="flex-1 flex flex-col min-h-[200px]">
-                    <textarea
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      placeholder="Ketik atau tempel teks di sini (Bahasa Indonesia, Inggris, atau bahasa lainnya)..."
-                      className="w-full flex-1 bg-black/50 border border-bordercolor rounded-xl p-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brandblue resize-none font-sans leading-relaxed custom-scrollbar"
-                    ></textarea>
-                    <div className="flex items-center justify-between pt-2 text-[11px] text-gray-500">
-                      <span><strong className="text-gray-300">{textInput.length}</strong> Karakter</span>
-                      <button onClick={() => setTextInput('')} className="hover:text-red-400 transition"><i className="fa-solid fa-trash-can mr-1"></i> Bersihkan</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col space-y-3 min-h-[200px]">
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-black/40 p-2.5 rounded-xl border border-bordercolor">
-                        <label className="font-bold text-brandblue block mb-1">Speaker 1 (Joe)</label>
-                        <select value={speaker1Voice} onChange={(e) => setSpeaker1Voice(e.target.value)} className="w-full bg-black/60 border border-bordercolor text-xs rounded-lg p-1.5 text-white">
-                          {GEMINI_VOICES.map(v => <option key={v.id} value={v.id} className="bg-[#0a0a0a]">{v.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="bg-black/40 p-2.5 rounded-xl border border-bordercolor">
-                        <label className="font-bold text-brandpurple block mb-1">Speaker 2 (Jane)</label>
-                        <select value={speaker2Voice} onChange={(e) => setSpeaker2Voice(e.target.value)} className="w-full bg-black/60 border border-bordercolor text-xs rounded-lg p-1.5 text-white">
-                          {GEMINI_VOICES.map(v => <option key={v.id} value={v.id} className="bg-[#0a0a0a]">{v.name}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <textarea
-                      value={dialogueInput}
-                      onChange={(e) => setDialogueInput(e.target.value)}
-                      placeholder="Format percakapan:&#10;Joe: Halo Jane, bagaimana kabarmu hari ini?&#10;Jane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!"
-                      className="w-full flex-1 bg-black/50 border border-bordercolor rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brandblue font-mono resize-none custom-scrollbar min-h-[120px]"
-                    ></textarea>
-                  </div>
-                )}
+            const player = document.getElementById('main-audio-player');
+            if (player) {
+                player.ontimeupdate = () => {
+                    const cur = formatTime(player.currentTime);
+                    const dur = formatTime(player.duration || 0);
+                    const timerEl = document.getElementById('audio-timer');
+                    if (timerEl) timerEl.innerText = `${cur} / ${dur}`;
+                };
+            }
 
-                <div className="pt-2 flex items-center gap-3">
-                  <button
-                    onClick={handleGenerateAudio}
-                    disabled={isLoading}
-                    className="flex-1 py-3 px-6 rounded-xl font-extrabold text-xs bg-brandblue hover:bg-sky-400 disabled:opacity-50 text-black shadow-lg transition flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <i className="fa-solid fa-spinner animate-spin"></i>
-                        <span>Menghasilkan Suara AI...</span>
-                      </>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-play"></i>
-                        <span>Hasilkan Suara AI</span>
-                      </>
-                    )}
-                  </button>
+            renderHistory();
+        };
 
-                  <button
-                    onClick={stopAudioPlayback}
-                    className="p-3 rounded-xl bg-black/40 border border-bordercolor text-gray-400 hover:text-white transition"
-                    title="Hentikan Audio"
-                  >
-                    <i className="fa-solid fa-stop"></i>
-                  </button>
-                </div>
-
-                {error && (
-                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3.5 rounded-xl text-xs flex items-center gap-2">
-                    <i className="fa-solid fa-circle-exclamation shrink-0"></i>
-                    <span>{error}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Audio Visualizer & Controls */}
-              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`}></div>
-                    <span className="text-xs font-bold text-gray-300">{isPlaying ? 'Memutar Audio AI' : 'Siap Memutar Audio'}</span>
-                  </div>
-                  <span className="text-xs font-mono text-gray-400">{timeDisplay}</span>
-                </div>
-
-                {/* Visualizer Canvas Area */}
-                <div className="relative bg-black/60 border border-bordercolor rounded-xl h-24 overflow-hidden flex items-center justify-center">
-                  <canvas ref={canvasRef} className="w-full h-full block"></canvas>
-                  {!isPlaying && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none">
-                      <i className="fa-solid fa-wave-square text-2xl mb-1"></i>
-                      <span className="text-xs">Klik "Hasilkan Suara AI" untuk melihat visualisasi</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Playback Controls & Downloads */}
-                <div className="flex items-center justify-between pt-1">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={togglePlayPause}
-                      disabled={!mp3Blob && currentEngine !== 'webspeech'}
-                      className="w-10 h-10 rounded-xl bg-brandblue hover:bg-sky-400 disabled:opacity-40 text-black flex items-center justify-center transition shadow"
-                    >
-                      <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
-                    </button>
-                    <div>
-                      <p className="text-xs font-bold text-white truncate max-w-[180px]">{currentTrackTitle}</p>
-                      <p className="text-[11px] text-gray-500">{currentTrackVoice}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => downloadAudio('mp3')}
-                      disabled={!mp3Blob}
-                      className="px-3 py-1.5 rounded-xl bg-brandblue text-black font-extrabold text-xs disabled:opacity-40 transition flex items-center gap-1.5"
-                    >
-                      <i className="fa-solid fa-file-audio"></i> Unduh MP3
-                    </button>
-                    <button
-                      onClick={() => downloadAudio('wav')}
-                      disabled={!wavBlob}
-                      className="px-2.5 py-1.5 rounded-xl bg-black/40 border border-bordercolor text-gray-300 hover:text-white text-xs disabled:opacity-40 transition"
-                    >
-                      WAV
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* History Log */}
-              <div className="bg-white/5 border border-bordercolor rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-bordercolor pb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-                    <i className="fa-solid fa-clock-rotate-left text-brandblue"></i> Riwayat Suara ({history.length})
-                  </h3>
-                  {history.length > 0 && (
-                    <button onClick={() => { setHistory([]); localStorage.removeItem('pv_tts_history'); }} className="text-[11px] text-gray-500 hover:text-red-400 transition">Hapus Semua</button>
-                  )}
-                </div>
-
-                <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
-                  {history.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic text-center py-3">Belum ada riwayat suara yang dibuat.</p>
-                  ) : (
-                    history.map((item) => (
-                      <div key={item.id} className="bg-black/50 border border-bordercolor p-2.5 rounded-xl flex items-center justify-between text-xs hover:border-brandblue/40 transition">
-                        <div className="truncate mr-2">
-                          <p className="font-bold text-gray-200 truncate">{item.text}</p>
-                          <p className="text-[10px] text-gray-500">{item.voice} • {item.time}</p>
-                        </div>
-                        {item.url && (
-                          <button onClick={() => playAudioUrl(item.url, item.text, item.voice)} className="p-1.5 rounded-lg bg-brandblue/20 text-brandblue hover:bg-brandblue hover:text-black transition shrink-0">
-                            <i className="fa-solid fa-play"></i>
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-            </section>
-
-          </main>
-
-          {/* API KEY SETTINGS MODAL */}
-          {showApiKeyModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="bg-[#0a0a0a] border border-bordercolor rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
-                
-                {/* Modal Header */}
-                <div className="p-5 flex items-center justify-between border-b border-bordercolor">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-brandblue/10 border border-brandblue/30 rounded-xl flex items-center justify-center text-brandblue">
-                      <i className="fa-solid fa-key text-lg"></i>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold tracking-wider text-white uppercase">PENGATURAN API KEY</h3>
-                      <p className="text-[11px] text-gray-400 uppercase">GOOGLE AI STUDIO</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowApiKeyModal(false)} className="text-gray-400 hover:text-white p-2 transition">
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-
-                {/* Modal Content */}
-                <div className="p-5 space-y-5 overflow-y-auto max-h-[75vh]">
-                  <div className="bg-white/5 border border-bordercolor rounded-xl p-3.5 text-xs text-gray-300 leading-relaxed">
-                    Tambahkan API Key dari{' '}
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-brandblue font-semibold underline">Google AI Studio</a>.
-                    Sistem otomatis berganti key jika salah satu limit.
-                  </div>
-
-                  {/* Saved Keys */}
-                  <div className="space-y-2">
-                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{apiKeys.length} KEY TERSIMPAN</h4>
-                    {apiKeys.length === 0 ? (
-                      <div className="p-4 bg-black/50 border border-bordercolor rounded-xl text-center text-xs text-gray-500 italic">
-                        Belum ada API Key tersimpan.
-                      </div>
-                    ) : (
-                      apiKeys.map((keyItem, index) => (
-                        <div key={index} className="bg-white/5 border border-bordercolor rounded-xl p-3 flex items-center justify-between">
-                          <div className="flex items-center space-x-3 min-w-0">
-                            <span className="w-6 h-6 bg-brandblue/10 border border-brandblue/30 rounded text-brandblue font-bold text-xs flex items-center justify-center shrink-0">{index + 1}</span>
-                            <span className="text-xs font-mono text-gray-300 truncate">{visibleKeysMap[index] ? keyItem : maskKeyStr(keyItem)}</span>
-                          </div>
-                          <div className="flex items-center space-x-1 shrink-0">
-                            <button onClick={() => copyKeyToClipboard(keyItem, index)} className="p-1.5 text-gray-400 hover:text-white">
-                              <i className={`fa-solid ${copiedKeyIndex === index ? 'fa-check text-emerald-400' : 'fa-copy'}`}></i>
-                            </button>
-                            <button onClick={() => toggleKeyVisibility(index)} className="p-1.5 text-gray-400 hover:text-white">
-                              <i className={`fa-solid ${visibleKeysMap[index] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                            </button>
-                            <button onClick={() => handleRemoveKey(index)} className="p-1.5 text-gray-400 hover:text-red-400">
-                              <i className="fa-solid fa-trash-can"></i>
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Add Key Form */}
-                  <form onSubmit={handleAddKey} className="space-y-3">
-                    <div className="relative">
-                      <input
-                        type={showInputKeyText ? 'text' : 'password'}
-                        value={newKeyInput}
-                        onChange={(e) => setNewKeyInput(e.target.value)}
-                        placeholder="AIza... (paste API Key di sini)"
-                        className="w-full bg-black/50 border border-bordercolor focus:border-brandblue rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 outline-none pr-10 font-mono"
-                      />
-                      <button type="button" onClick={() => setShowInputKeyText(!showInputKeyText)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white text-xs">
-                        <i className={`fa-solid ${showInputKeyText ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
-                    </div>
-                    <button type="submit" disabled={!newKeyInput.trim()} className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-40 border border-bordercolor text-white font-bold py-2.5 rounded-xl text-xs transition">
-                      <i className="fa-solid fa-plus mr-1"></i> Tambah Key
-                    </button>
-                  </form>
-                </div>
-
-                <div className="bg-black/50 border-t border-bordercolor py-3 px-5 text-center text-[11px] text-gray-500 font-mono">
-                  {apiKeys.length} Key Aktif • Auto-Fallback Active
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <footer className="border-t border-bordercolor bg-white/5 py-4 text-center text-xs text-gray-500 mt-auto">
-            <p>&copy; {new Date().getFullYear()} AI Voice Studio — Developed by <a href="https://www.buanamedia.my.id" target="_blank" rel="noopener noreferrer" className="text-brandblue hover:underline">Buana Media</a>.</p>
-          </footer>
-
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+        function formatTime(sec) {
+            if (isNaN(sec)) return "00:00";
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+    </script>
 </body>
 </html>
