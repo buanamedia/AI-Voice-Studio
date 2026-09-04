@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Voice Studio - Generator Text to Speech</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#0a0a0a',
+            bordercolor: 'rgba(125, 125, 125, 0.2)',
+            brandblue: '#38bdf8',
+            brandpurple: '#8b5cf6',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- FontAwesome & Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- LAME MP3 Encoder Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.5);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.8);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased text-gray-200 bg-darkbg">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const GEMINI_VOICES = [
+      { id: "Zephyr", name: "Zephyr", gender: "female", style: "Bright & Energetik", description: "Cerah, ramah, dan artikulatif", tag: "Populer" },
+      { id: "Kore", name: "Kore", gender: "female", style: "Firm & Berwibawa", description: "Tegas, profesional, dan meyakinkan", tag: "Bisnis" },
+      { id: "Leda", name: "Leda", gender: "female", style: "Youthful & Lembut", description: "Muda, bersih, dan lembut", tag: "Lembut" },
+      { id: "Aoede", name: "Aoede", gender: "female", style: "Breezy & Santai", description: "Santai, natural, dan menyenangkan", tag: "Casual" },
+      { id: "Callirrhoe", name: "Callirrhoe", gender: "female", style: "Easy-going", description: "Tenang dan halus", tag: "Santai" },
+      { id: "Puck", name: "Puck", gender: "male", style: "Upbeat & Ceria", description: "Penuh semangat dan ekspresif", tag: "Ceria" },
+      { id: "Charon", name: "Charon", gender: "male", style: "Informative & Dalam", description: "Formal, jelas, cocok untuk narasi", tag: "Formal" },
+      { id: "Fenrir", name: "Fenrir", gender: "male", style: "Excitable & Antusias", description: "Dinamis dan penuh energi", tag: "Antusias" },
+      { id: "Enceladus", name: "Enceladus", gender: "male", style: "Breathy & Berbisik", description: "Suara hangat dan lembut", tag: "ASMR" },
+      { id: "Iapetus", name: "Iapetus", gender: "male", style: "Clear & Netral", description: "Suara jernih dan berwibawa", tag: "Berita" }
+    ];
+
+    function App() {
+      // API Keys Multi State
+      const [apiKeys, setApiKeys] = useState([]);
+      const [newKeyInput, setNewKeyInput] = useState('');
+      const [showInputKeyText, setShowInputKeyText] = useState(false);
+      const [visibleKeysMap, setVisibleKeysMap] = useState({});
+      const [copiedKeyIndex, setCopiedKeyIndex] = useState(null);
+      const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+
+      // Engine & Input Settings
+      const [currentEngine, setCurrentEngine] = useState('gemini'); // 'gemini', 'webspeech'
+      const [inputMode, setInputMode] = useState('single'); // 'single', 'dialogue'
+      const [selectedVoice, setSelectedVoice] = useState('Zephyr');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [genderFilter, setGenderFilter] = useState('all');
+      
+      const [textInput, setTextInput] = useState('');
+      const [dialogueInput, setDialogueInput] = useState('');
+      const [speaker1Voice, setSpeaker1Voice] = useState('Zephyr');
+      const [speaker2Voice, setSpeaker2Voice] = useState('Puck');
+      
+      const [emotionPrefix, setEmotionPrefix] = useState('');
+      const [speechRate, setSpeechRate] = useState(1.0);
+      const [speechPitch, setSpeechPitch] = useState(1.0);
+
+      // Audio & Visualizer State
+      const [isLoading, setIsLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [currentTrackTitle, setCurrentTrackTitle] = useState('Belum ada audio');
+      const [currentTrackVoice, setCurrentTrackVoice] = useState('Voice: -');
+      const [timeDisplay, setTimeDisplay] = useState('00:00 / 00:00');
+      
+      const [mp3Blob, setMp3Blob] = useState(null);
+      const [wavBlob, setWavBlob] = useState(null);
+      const [history, setHistory] = useState([]);
+      const [toast, setToast] = useState(null);
+
+      const audioRef = useRef(null);
+      const canvasRef = useRef(null);
+      const animFrameRef = useRef(null);
+
+      // Initial Storage Load
+      useEffect(() => {
+        const savedKeys = localStorage.getItem('pv_tts_api_keys');
+        if (savedKeys) {
+          try {
+            const parsed = JSON.parse(savedKeys);
+            if (Array.isArray(parsed) && parsed.length > 0) setApiKeys(parsed);
+            else setShowApiKeyModal(true);
+          } catch(e) { setShowApiKeyModal(true); }
+        } else {
+          const legacyKey = localStorage.getItem('gemini_api_key');
+          if (legacyKey) {
+            setApiKeys([legacyKey]);
+            localStorage.setItem('pv_tts_api_keys', JSON.stringify([legacyKey]));
+          } else {
+            setShowApiKeyModal(true);
+          }
+        }
+
+        const savedHistory = localStorage.getItem('pv_tts_history');
+        if (savedHistory) {
+          try { setHistory(JSON.parse(savedHistory)); } catch(e){}
+        }
+      }, []);
+
+      // Audio Event Listeners
+      useEffect(() => {
+        const player = audioRef.current;
+        if (!player) return;
+
+        const handleTimeUpdate = () => {
+          const cur = formatTime(player.currentTime);
+          const dur = formatTime(player.duration || 0);
+          setTimeDisplay(`${cur} / ${dur}`);
+        };
+
+        const handleEnded = () => {
+          setIsPlaying(false);
+          stopVisualizer();
+        };
+
+        player.addEventListener('timeupdate', handleTimeUpdate);
+        player.addEventListener('ended', handleEnded);
+
+        return () => {
+          player.removeEventListener('timeupdate', handleTimeUpdate);
+          player.removeEventListener('ended', handleEnded);
+        };
+      }, []);
+
+      const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      // Key Management Handlers
+      const handleAddKey = (e) => {
+        e.preventDefault();
+        const trimmed = newKeyInput.trim();
+        if (!trimmed) return;
+
+        if (apiKeys.includes(trimmed)) {
+          showToast('API Key ini sudah tersimpan dalam daftar.', 'warning');
+          return;
+        }
+
+        const updated = [...apiKeys, trimmed];
+        setApiKeys(updated);
+        localStorage.setItem('pv_tts_api_keys', JSON.stringify(updated));
+        setNewKeyInput('');
+        showToast('API Key berhasil ditambahkan!', 'success');
+      };
+
+      const handleRemoveKey = (index) => {
+        const updated = apiKeys.filter((_, i) => i !== index);
+        setApiKeys(updated);
+        localStorage.setItem('pv_tts_api_keys', JSON.stringify(updated));
+      };
+
+      const toggleKeyVisibility = (index) => {
+        setVisibleKeysMap(prev => ({ ...prev, [index]: !prev[index] }));
+      };
+
+      const copyKeyToClipboard = (keyStr, index) => {
+        navigator.clipboard.writeText(keyStr);
+        setCopiedKeyIndex(index);
+        setTimeout(() => setCopiedKeyIndex(null), 1500);
+      };
+
+      const maskKeyStr = (str) => {
+        if (!str || str.length < 10) return '••••••••';
+        return `${str.substring(0, 6)}...${str.substring(str.length - 4)}`;
+      };
+
+      // Audio Conversion Helper Functions
+      const base64ToArrayBuffer = (base64) => {
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+      };
+
+      const pcmToWavBlob = (pcm16Data, sampleRate = 24000) => {
+        const buffer = new ArrayBuffer(44 + pcm16Data.length * 2);
+        const view = new DataView(buffer);
+
+        const writeString = (v, offset, str) => {
+          for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+        };
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + pcm16Data.length * 2, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, pcm16Data.length * 2, true);
+
+        let offset = 44;
+        for (let i = 0; i < pcm16Data.length; i++, offset += 2) {
+          view.setInt16(offset, pcm16Data[i], true);
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+      };
+
+      const pcmToMp3Blob = (pcm16Data, sampleRate = 24000) => {
+        if (typeof lamejs === 'undefined') {
+          return pcmToWavBlob(pcm16Data, sampleRate);
+        }
+        const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+        const sampleBlockSize = 1152;
+        const mp3Data = [];
+
+        for (let i = 0; i < pcm16Data.length; i += sampleBlockSize) {
+          const sampleChunk = pcm16Data.subarray(i, i + sampleBlockSize);
+          const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+          if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+      };
+
+      // Visualizer Canvas Handler
+      const startVisualizer = () => {
+        stopVisualizer();
+        drawVisualizer();
+      };
+
+      const stopVisualizer = () => {
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      };
+
+      const drawVisualizer = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const bars = 36;
+        const barWidth = width / bars - 2;
+
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = 0; i < bars; i++) {
+          const barHeight = Math.random() * (height * 0.7) + 10;
+          const x = i * (barWidth + 2);
+          const y = (height - barHeight) / 2;
+
+          const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+          gradient.addColorStop(0, '#38bdf8');
+          gradient.addColorStop(1, '#8b5cf6');
+
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(x, y, barWidth, barHeight, 4);
+          ctx.fill();
+        }
+
+        animFrameRef.current = requestAnimationFrame(drawVisualizer);
+      };
+
+      // Generate Audio Trigger with Multi-Key Fallback Engine
+      const handleGenerateAudio = async () => {
+        const activeText = inputMode === 'single' ? textInput.trim() : dialogueInput.trim();
+        if (!activeText) {
+          showToast('Ketikkan teks terlebih dahulu sebelum menghasilkan suara!', 'warning');
+          return;
+        }
+
+        if (currentEngine === 'gemini' && apiKeys.length === 0) {
+          setShowApiKeyModal(true);
+          return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          if (currentEngine === 'webspeech') {
+            generateWebSpeech(activeText);
+            return;
+          }
+
+          let payload;
+          if (inputMode === 'dialogue') {
+            payload = {
+              contents: [{ parts: [{ text: `TTS the following conversation:\n${activeText}` }] }],
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  multiSpeakerVoiceConfig: {
+                    speakerVoiceConfigs: [
+                      { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker1Voice } } },
+                      { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker2Voice } } }
+                    ]
+                  }
+                }
+              },
+              model: "gemini-2.5-flash-preview-tts"
+            };
+          } else {
+            const fullPrompt = emotionPrefix ? `${emotionPrefix}${activeText}` : activeText;
+            payload = {
+              contents: [{ parts: [{ text: fullPrompt }] }],
+              generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: selectedVoice }
+                  }
+                }
+              },
+              model: "gemini-2.5-flash-preview-tts"
+            };
+          }
+
+          let pcmBase64 = null;
+          let mimeType = "audio/L16;rate=24000";
+          let lastErrorMessage = '';
+
+          for (let k = 0; k < apiKeys.length; k++) {
+            const key = apiKeys[k];
+            try {
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (res.ok) {
+                const data = await res.json();
+                const inlinePart = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                if (inlinePart && inlinePart.data) {
+                  pcmBase64 = inlinePart.data;
+                  mimeType = inlinePart.mimeType || mimeType;
+                  break;
+                }
+              } else {
+                const errData = await res.json().catch(() => ({}));
+                lastErrorMessage = errData.error?.message || `Key #${k+1} gagal memproses audio.`;
+              }
+            } catch (err) {
+              lastErrorMessage = err.message;
+            }
+          }
+
+          if (!pcmBase64) {
+            throw new Error(lastErrorMessage || 'Gagal menghasilkan suara dari API Key yang tersedia.');
+          }
+
+          let sampleRate = 24000;
+          const rateMatch = mimeType.match(/rate=(\d+)/);
+          if (rateMatch && rateMatch[1]) sampleRate = parseInt(rateMatch[1], 10);
+
+          const pcmBuffer = base64ToArrayBuffer(pcmBase64);
+          const pcm16 = new Int16Array(pcmBuffer);
+
+          const generatedMp3 = pcmToMp3Blob(pcm16, sampleRate);
+          const generatedWav = pcmToWavBlob(pcm16, sampleRate);
+
+          setMp3Blob(generatedMp3);
+          setWavBlob(generatedWav);
+
+          const audioUrl = URL.createObjectURL(generatedMp3);
+          playAudioUrl(audioUrl, activeText, `Gemini (${selectedVoice})`);
+
+        } catch (err) {
+          setError(err.message || 'Terjadi kesalahan saat memproses audio.');
+          showToast(err.message || 'Gagal membuat audio.', 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const generateWebSpeech = (text) => {
+        if (!('speechSynthesis' in window)) {
+          setError('Browser Anda tidak mendukung Web Speech API.');
+          setIsLoading(false);
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const sysVoices = window.speechSynthesis.getVoices();
+        const selected = sysVoices.find(v => v.name === selectedVoice);
+        if (selected) utterance.voice = selected;
+
+        utterance.rate = speechRate;
+        utterance.pitch = speechPitch;
+
+        utterance.onstart = () => {
+          setIsLoading(false);
+          setIsPlaying(true);
+          setCurrentTrackTitle(text.length > 30 ? text.substring(0, 30) + '...' : text);
+          setCurrentTrackVoice(`Voice: WebSpeech (${selectedVoice})`);
+          startVisualizer();
+        };
+
+        utterance.onend = () => {
+          setIsPlaying(false);
+          stopVisualizer();
+        };
+
+        utterance.onerror = () => {
+          setIsLoading(false);
+          showToast('Gagal memutar audio WebSpeech', 'error');
+        };
+
+        window.speechSynthesis.speak(utterance);
+        addHistoryItem(text, `WebSpeech (${selectedVoice})`, null);
+      };
+
+      const playAudioUrl = (url, text, voiceLabel) => {
+        const player = audioRef.current;
+        if (!player) return;
+
+        player.src = url;
+        player.play();
+
+        setIsPlaying(true);
+        setCurrentTrackTitle(text.length > 30 ? text.substring(0, 30) + '...' : text);
+        setCurrentTrackVoice(`Voice: ${voiceLabel}`);
+        startVisualizer();
+
+        addHistoryItem(text, voiceLabel, url);
+        showToast('Suara AI berhasil dihasilkan & diputar!', 'success');
+      };
+
+      const addHistoryItem = (text, voiceInfo, url) => {
+        const item = {
+          id: Date.now(),
+          text: text.length > 45 ? text.substring(0, 45) + '...' : text,
+          voice: voiceInfo,
+          url: url,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        const updated = [item, ...history.slice(0, 14)];
+        setHistory(updated);
+        localStorage.setItem('pv_tts_history', JSON.stringify(updated));
+      };
+
+      const togglePlayPause = () => {
+        if (currentEngine === 'webspeech' && window.speechSynthesis) {
+          if (window.speechSynthesis.speaking) {
+            if (window.speechSynthesis.paused) {
+              window.speechSynthesis.resume();
+              setIsPlaying(true);
+              startVisualizer();
+            } else {
+              window.speechSynthesis.pause();
+              setIsPlaying(false);
+              stopVisualizer();
+            }
+            return;
+          }
+        }
+
+        const player = audioRef.current;
+        if (!player || !player.src) return;
+
+        if (player.paused) {
+          player.play();
+          setIsPlaying(true);
+          startVisualizer();
+        } else {
+          player.pause();
+          setIsPlaying(false);
+          stopVisualizer();
+        }
+      };
+
+      const stopAudioPlayback = () => {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        const player = audioRef.current;
+        if (player) {
+          player.pause();
+          player.currentTime = 0;
+        }
+        setIsPlaying(false);
+        stopVisualizer();
+      };
+
+      const downloadAudio = (format) => {
+        const targetBlob = format === 'mp3' ? mp3Blob : wavBlob;
+        if (!targetBlob) {
+          showToast('Tidak ada file audio yang tersedia untuk diunduh', 'warning');
+          return;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(targetBlob);
+        a.download = `AI-Voice-${Date.now()}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast(`Audio diunduh (Format ${format.toUpperCase()})`, 'success');
+      };
+
+      const loadPresetScript = (type) => {
+        if (!type) return;
+        const presets = {
+          podcast: "Selamat datang di Podcast Buana Tech! Hari ini kita akan membahas perkembangan kecerdasan buatan dan masa depan teknologi suara.",
+          story: "Di sebuah hutan yang lebat, hiduplah seekor kancil yang sangat cerdik. Setiap hari ia berkeliling mencari makan sambil menyapa teman-temannya.",
+          dialogue: "Joe: Halo Jane, bagaimana kabarmu hari ini?\nJane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!",
+          news: "Berita kilat hari ini. Pasar saham menguat setelah peluncuran teknologi AI terbaru yang memungkinkan sintesis suara hiper-realistis."
+        };
+        if (presets[type]) {
+          if (inputMode === 'dialogue') setDialogueInput(presets[type]);
+          else setTextInput(presets[type]);
+          showToast('Skrip sampel berhasil dimuat!', 'success');
+        }
+      };
+
+      const formatTime = (sec) => {
+        if (isNaN(sec)) return "00:00";
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+      };
+
+      // Filtered Voice List
+      const filteredVoices = GEMINI_VOICES.filter(v => {
+        const matchesQuery = `${v.name} ${v.description} ${v.style} ${v.tag}`.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesGender = genderFilter === 'all' || v.gender === genderFilter;
+        return matchesQuery && matchesGender;
+      });
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          <audio ref={audioRef} className="hidden" />
+
+          {/* Toast Notification */}
+          {toast && (
+            <div className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transition ${
+              toast.type === 'success' ? 'bg-emerald-600 text-white' :
+              toast.type === 'error' ? 'bg-red-600 text-white' :
+              toast.type === 'warning' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-200 border border-bordercolor'
+            }`}>
+              <i className={`fa-solid ${toast.type === 'success' ? 'fa-circle-check' : toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'}`}></i>
+              <span>{toast.message}</span>
+            </div>
+          )}
+
+          {/* Header */}
+          <header className="sticky top-0 z-40 border-b border-bordercolor bg-[#0a0a0a]/90 backdrop-blur px-4 sm:px-8 py-3.5 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg text-white">
+                <i className="fa-solid fa-wand-magic-sparkles text-lg"></i>
+              </div>
+              <div>
+                <h1 className="text-lg font-extrabold text-white leading-tight">AI Voice Studio</h1>
+                <p className="text-[11px] text-brandblue font-medium">Text-to-Speech Multi-Engine AI</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Gemini 2.5 TTS Ready
+              </span>
+
+              <button
+                onClick={() => setShowApiKeyModal(true)}
+                className="text-xs bg-white/5 hover:bg-white/10 text-gray-200 border border-bordercolor px-3.5 py-2 rounded-xl transition font-semibold flex items-center gap-2"
+              >
+                <i className="fa-solid fa-key text-brandblue"></i>
+                <span>{apiKeys.length} Key Tersimpan</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Main Grid */}
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* LEFT COLUMN: Controls & Voice Selection */}
+            <section className="lg:col-span-5 space-y-5">
+              
+              {/* Engine Selection */}
+              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                    <i className="fa-solid fa-sliders text-brandblue"></i> Pilih Engine Suara
+                  </h2>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-brandblue/10 text-brandblue font-semibold">Free Tier</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    onClick={() => setCurrentEngine('gemini')}
+                    className={`p-3 rounded-xl border text-left transition flex flex-col gap-1 ${currentEngine === 'gemini' ? 'border-brandblue bg-brandblue/10 text-white shadow' : 'border-bordercolor bg-black/40 text-gray-400 hover:text-white'}`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs"><i className="fa-brands fa-google text-brandblue mr-1"></i> Gemini AI</span>
+                      <span className="text-[9px] bg-brandblue text-black font-extrabold px-1.5 py-0.5 rounded">Rekomendasi</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">Suara AI Realistis</span>
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentEngine('webspeech')}
+                    className={`p-3 rounded-xl border text-left transition flex flex-col gap-1 ${currentEngine === 'webspeech' ? 'border-brandblue bg-brandblue/10 text-white shadow' : 'border-bordercolor bg-black/40 text-gray-400 hover:text-white'}`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs"><i className="fa-solid fa-desktop text-purple-400 mr-1"></i> Web Speech</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded">Offline</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">Bawaan Browser</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Character Voice List */}
+              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                    <i className="fa-solid fa-user-gear text-brandpurple"></i> Karakter Suara
+                  </h2>
+                  <span className="text-xs text-gray-400">{filteredVoices.length} Pilihan Suara</span>
+                </div>
+
+                {/* Filter / Search */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Cari nama suara..."
+                      className="w-full bg-black/50 border border-bordercolor rounded-xl pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-brandblue"
+                    />
+                  </div>
+                  <select
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value)}
+                    className="bg-black/50 border border-bordercolor rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-brandblue"
+                  >
+                    <option value="all" className="bg-[#0a0a0a]">Semua</option>
+                    <option value="female" className="bg-[#0a0a0a]">👩 Perempuan</option>
+                    <option value="male" className="bg-[#0a0a0a]">👨 Laki-Laki</option>
+                  </select>
+                </div>
+
+                {/* Voice Cards Container */}
+                <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                  {filteredVoices.map((v) => {
+                    const isSelected = v.id === selectedVoice;
+                    return (
+                      <div
+                        key={v.id}
+                        onClick={() => setSelectedVoice(v.id)}
+                        className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between ${isSelected ? 'border-brandblue bg-brandblue/10 text-white' : 'border-bordercolor bg-black/40 hover:border-gray-500 text-gray-300'}`}
+                      >
+                        <div className="flex items-center space-x-3 truncate">
+                          <div className={`w-8 h-8 rounded-lg ${isSelected ? 'bg-brandblue text-black' : 'bg-white/10 text-gray-400'} flex items-center justify-center font-bold text-xs shrink-0`}>
+                            {v.gender === 'female' ? '👩' : '👨'}
+                          </div>
+                          <div className="truncate">
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="text-xs font-bold truncate">{v.name}</h4>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-gray-300">{v.tag}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 truncate">{v.description}</p>
+                          </div>
+                        </div>
+
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-brandblue bg-brandblue' : 'border-gray-600'}`}>
+                          {isSelected && <i className="fa-solid fa-check text-[10px] text-black"></i>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Expressive Instructions */}
+                {currentEngine === 'gemini' && (
+                  <div className="pt-3 border-t border-bordercolor space-y-2">
+                    <label className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                      <span><i className="fa-solid fa-masks-theater text-amber-400 mr-1"></i> Ekspresi / Gaya Ucapan</span>
+                      <span className="text-[10px] text-gray-500">Opsional</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                      <button onClick={() => setEmotionPrefix('Bicara dengan ceria dan ramah: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">😊 Ceria</button>
+                      <button onClick={() => setEmotionPrefix('Bicara dengan nada berbisik misterius: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">🤫 Berbisik</button>
+                      <button onClick={() => setEmotionPrefix('Bicara dengan tegas seperti pembawa berita formal: ')} className="p-1.5 rounded-lg bg-black/40 border border-bordercolor text-gray-300 hover:border-brandblue truncate text-left">🎙️ Berita</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Speed & Pitch Sliders */}
+                <div className="pt-2 border-t border-bordercolor grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <div className="flex justify-between text-gray-400 mb-1">
+                      <span>Speed</span>
+                      <span>{speechRate}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={speechRate}
+                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                      className="w-full accent-brandblue h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-gray-400 mb-1">
+                      <span>Pitch</span>
+                      <span>{speechPitch}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="1.5"
+                      step="0.1"
+                      value={speechPitch}
+                      onChange={(e) => setSpeechPitch(parseFloat(e.target.value))}
+                      className="w-full accent-brandblue h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+            </section>
+
+            {/* RIGHT COLUMN: TEXT INPUT & AUDIO PLAYER */}
+            <section className="lg:col-span-7 space-y-5 flex flex-col">
+              
+              {/* Text Input Card */}
+              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4 flex-1 flex flex-col">
+                <div className="flex items-center justify-between border-b border-bordercolor pb-3">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setInputMode('single')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${inputMode === 'single' ? 'bg-brandblue text-black' : 'bg-black/40 text-gray-400 border border-bordercolor'}`}
+                    >
+                      <i className="fa-solid fa-align-left mr-1"></i> Teks Tunggal
+                    </button>
+                    <button
+                      onClick={() => setInputMode('dialogue')}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${inputMode === 'dialogue' ? 'bg-brandblue text-black' : 'bg-black/40 text-gray-400 border border-bordercolor'}`}
+                    >
+                      <i className="fa-solid fa-comments mr-1"></i> Percakapan Multi-Speaker
+                    </button>
+                  </div>
+
+                  <select
+                    onChange={(e) => loadPresetScript(e.target.value)}
+                    defaultValue=""
+                    className="bg-black/50 border border-bordercolor text-gray-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-brandblue"
+                  >
+                    <option value="" disabled>-- Contoh Skrip --</option>
+                    <option value="podcast" className="bg-[#0a0a0a]">Intro Podcast</option>
+                    <option value="story" className="bg-[#0a0a0a]">Dongeng Singkat</option>
+                    <option value="dialogue" className="bg-[#0a0a0a]">Percakapan Dua Orang</option>
+                    <option value="news" className="bg-[#0a0a0a]">Berita Ekonomi</option>
+                  </select>
+                </div>
+
+                {inputMode === 'single' ? (
+                  <div className="flex-1 flex flex-col min-h-[200px]">
+                    <textarea
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      placeholder="Ketik atau tempel teks di sini (Bahasa Indonesia, Inggris, atau bahasa lainnya)..."
+                      className="w-full flex-1 bg-black/50 border border-bordercolor rounded-xl p-4 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brandblue resize-none font-sans leading-relaxed custom-scrollbar"
+                    ></textarea>
+                    <div className="flex items-center justify-between pt-2 text-[11px] text-gray-500">
+                      <span><strong className="text-gray-300">{textInput.length}</strong> Karakter</span>
+                      <button onClick={() => setTextInput('')} className="hover:text-red-400 transition"><i className="fa-solid fa-trash-can mr-1"></i> Bersihkan</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col space-y-3 min-h-[200px]">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-black/40 p-2.5 rounded-xl border border-bordercolor">
+                        <label className="font-bold text-brandblue block mb-1">Speaker 1 (Joe)</label>
+                        <select value={speaker1Voice} onChange={(e) => setSpeaker1Voice(e.target.value)} className="w-full bg-black/60 border border-bordercolor text-xs rounded-lg p-1.5 text-white">
+                          {GEMINI_VOICES.map(v => <option key={v.id} value={v.id} className="bg-[#0a0a0a]">{v.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="bg-black/40 p-2.5 rounded-xl border border-bordercolor">
+                        <label className="font-bold text-brandpurple block mb-1">Speaker 2 (Jane)</label>
+                        <select value={speaker2Voice} onChange={(e) => setSpeaker2Voice(e.target.value)} className="w-full bg-black/60 border border-bordercolor text-xs rounded-lg p-1.5 text-white">
+                          {GEMINI_VOICES.map(v => <option key={v.id} value={v.id} className="bg-[#0a0a0a]">{v.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <textarea
+                      value={dialogueInput}
+                      onChange={(e) => setDialogueInput(e.target.value)}
+                      placeholder="Format percakapan:&#10;Joe: Halo Jane, bagaimana kabarmu hari ini?&#10;Jane: Sangat baik Joe! Pengujian AI Voice Studio ini luar biasa cepat!"
+                      className="w-full flex-1 bg-black/50 border border-bordercolor rounded-xl p-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-brandblue font-mono resize-none custom-scrollbar min-h-[120px]"
+                    ></textarea>
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    onClick={handleGenerateAudio}
+                    disabled={isLoading}
+                    className="flex-1 py-3 px-6 rounded-xl font-extrabold text-xs bg-brandblue hover:bg-sky-400 disabled:opacity-50 text-black shadow-lg transition flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <i className="fa-solid fa-spinner animate-spin"></i>
+                        <span>Menghasilkan Suara AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-play"></i>
+                        <span>Hasilkan Suara AI</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={stopAudioPlayback}
+                    className="p-3 rounded-xl bg-black/40 border border-bordercolor text-gray-400 hover:text-white transition"
+                    title="Hentikan Audio"
+                  >
+                    <i className="fa-solid fa-stop"></i>
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3.5 rounded-xl text-xs flex items-center gap-2">
+                    <i className="fa-solid fa-circle-exclamation shrink-0"></i>
+                    <span>{error}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Audio Visualizer & Controls */}
+              <div className="bg-white/5 border border-bordercolor rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${isPlaying ? 'bg-emerald-400 animate-pulse' : 'bg-gray-600'}`}></div>
+                    <span className="text-xs font-bold text-gray-300">{isPlaying ? 'Memutar Audio AI' : 'Siap Memutar Audio'}</span>
+                  </div>
+                  <span className="text-xs font-mono text-gray-400">{timeDisplay}</span>
+                </div>
+
+                {/* Visualizer Canvas Area */}
+                <div className="relative bg-black/60 border border-bordercolor rounded-xl h-24 overflow-hidden flex items-center justify-center">
+                  <canvas ref={canvasRef} className="w-full h-full block"></canvas>
+                  {!isPlaying && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none">
+                      <i className="fa-solid fa-wave-square text-2xl mb-1"></i>
+                      <span className="text-xs">Klik "Hasilkan Suara AI" untuk melihat visualisasi</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Playback Controls & Downloads */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={togglePlayPause}
+                      disabled={!mp3Blob && currentEngine !== 'webspeech'}
+                      className="w-10 h-10 rounded-xl bg-brandblue hover:bg-sky-400 disabled:opacity-40 text-black flex items-center justify-center transition shadow"
+                    >
+                      <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+                    </button>
+                    <div>
+                      <p className="text-xs font-bold text-white truncate max-w-[180px]">{currentTrackTitle}</p>
+                      <p className="text-[11px] text-gray-500">{currentTrackVoice}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => downloadAudio('mp3')}
+                      disabled={!mp3Blob}
+                      className="px-3 py-1.5 rounded-xl bg-brandblue text-black font-extrabold text-xs disabled:opacity-40 transition flex items-center gap-1.5"
+                    >
+                      <i className="fa-solid fa-file-audio"></i> Unduh MP3
+                    </button>
+                    <button
+                      onClick={() => downloadAudio('wav')}
+                      disabled={!wavBlob}
+                      className="px-2.5 py-1.5 rounded-xl bg-black/40 border border-bordercolor text-gray-300 hover:text-white text-xs disabled:opacity-40 transition"
+                    >
+                      WAV
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* History Log */}
+              <div className="bg-white/5 border border-bordercolor rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-bordercolor pb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                    <i className="fa-solid fa-clock-rotate-left text-brandblue"></i> Riwayat Suara ({history.length})
+                  </h3>
+                  {history.length > 0 && (
+                    <button onClick={() => { setHistory([]); localStorage.removeItem('pv_tts_history'); }} className="text-[11px] text-gray-500 hover:text-red-400 transition">Hapus Semua</button>
+                  )}
+                </div>
+
+                <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
+                  {history.length === 0 ? (
+                    <p className="text-xs text-gray-500 italic text-center py-3">Belum ada riwayat suara yang dibuat.</p>
+                  ) : (
+                    history.map((item) => (
+                      <div key={item.id} className="bg-black/50 border border-bordercolor p-2.5 rounded-xl flex items-center justify-between text-xs hover:border-brandblue/40 transition">
+                        <div className="truncate mr-2">
+                          <p className="font-bold text-gray-200 truncate">{item.text}</p>
+                          <p className="text-[10px] text-gray-500">{item.voice} • {item.time}</p>
+                        </div>
+                        {item.url && (
+                          <button onClick={() => playAudioUrl(item.url, item.text, item.voice)} className="p-1.5 rounded-lg bg-brandblue/20 text-brandblue hover:bg-brandblue hover:text-black transition shrink-0">
+                            <i className="fa-solid fa-play"></i>
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </section>
+
+          </main>
+
+          {/* API KEY SETTINGS MODAL */}
+          {showApiKeyModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-[#0a0a0a] border border-bordercolor rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
+                
+                {/* Modal Header */}
+                <div className="p-5 flex items-center justify-between border-b border-bordercolor">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-brandblue/10 border border-brandblue/30 rounded-xl flex items-center justify-center text-brandblue">
+                      <i className="fa-solid fa-key text-lg"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold tracking-wider text-white uppercase">PENGATURAN API KEY</h3>
+                      <p className="text-[11px] text-gray-400 uppercase">GOOGLE AI STUDIO</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowApiKeyModal(false)} className="text-gray-400 hover:text-white p-2 transition">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-5 space-y-5 overflow-y-auto max-h-[75vh]">
+                  <div className="bg-white/5 border border-bordercolor rounded-xl p-3.5 text-xs text-gray-300 leading-relaxed">
+                    Tambahkan API Key dari{' '}
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-brandblue font-semibold underline">Google AI Studio</a>.
+                    Sistem otomatis berganti key jika salah satu limit.
+                  </div>
+
+                  {/* Saved Keys */}
+                  <div className="space-y-2">
+                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{apiKeys.length} KEY TERSIMPAN</h4>
+                    {apiKeys.length === 0 ? (
+                      <div className="p-4 bg-black/50 border border-bordercolor rounded-xl text-center text-xs text-gray-500 italic">
+                        Belum ada API Key tersimpan.
+                      </div>
+                    ) : (
+                      apiKeys.map((keyItem, index) => (
+                        <div key={index} className="bg-white/5 border border-bordercolor rounded-xl p-3 flex items-center justify-between">
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <span className="w-6 h-6 bg-brandblue/10 border border-brandblue/30 rounded text-brandblue font-bold text-xs flex items-center justify-center shrink-0">{index + 1}</span>
+                            <span className="text-xs font-mono text-gray-300 truncate">{visibleKeysMap[index] ? keyItem : maskKeyStr(keyItem)}</span>
+                          </div>
+                          <div className="flex items-center space-x-1 shrink-0">
+                            <button onClick={() => copyKeyToClipboard(keyItem, index)} className="p-1.5 text-gray-400 hover:text-white">
+                              <i className={`fa-solid ${copiedKeyIndex === index ? 'fa-check text-emerald-400' : 'fa-copy'}`}></i>
+                            </button>
+                            <button onClick={() => toggleKeyVisibility(index)} className="p-1.5 text-gray-400 hover:text-white">
+                              <i className={`fa-solid ${visibleKeysMap[index] ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            </button>
+                            <button onClick={() => handleRemoveKey(index)} className="p-1.5 text-gray-400 hover:text-red-400">
+                              <i className="fa-solid fa-trash-can"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add Key Form */}
+                  <form onSubmit={handleAddKey} className="space-y-3">
+                    <div className="relative">
+                      <input
+                        type={showInputKeyText ? 'text' : 'password'}
+                        value={newKeyInput}
+                        onChange={(e) => setNewKeyInput(e.target.value)}
+                        placeholder="AIza... (paste API Key di sini)"
+                        className="w-full bg-black/50 border border-bordercolor focus:border-brandblue rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 outline-none pr-10 font-mono"
+                      />
+                      <button type="button" onClick={() => setShowInputKeyText(!showInputKeyText)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white text-xs">
+                        <i className={`fa-solid ${showInputKeyText ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      </button>
+                    </div>
+                    <button type="submit" disabled={!newKeyInput.trim()} className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-40 border border-bordercolor text-white font-bold py-2.5 rounded-xl text-xs transition">
+                      <i className="fa-solid fa-plus mr-1"></i> Tambah Key
+                    </button>
+                  </form>
+                </div>
+
+                <div className="bg-black/50 border-t border-bordercolor py-3 px-5 text-center text-[11px] text-gray-500 font-mono">
+                  {apiKeys.length} Key Aktif • Auto-Fallback Active
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="border-t border-bordercolor bg-white/5 py-4 text-center text-xs text-gray-500 mt-auto">
+            <p>&copy; {new Date().getFullYear()} AI Voice Studio — Developed by <a href="https://www.buanamedia.my.id" target="_blank" rel="noopener noreferrer" className="text-brandblue hover:underline">Buana Media</a>.</p>
+          </footer>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
